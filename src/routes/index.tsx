@@ -36,7 +36,7 @@ const PRICE_SYMBOL: Record<string, string> = {
   BTC_LEGACY: "btc",
   ETH: "eth",
   BNB: "bnb",
-  MATIC: "matic",
+  MATIC: "pol",
   ARB: "eth",
   OP: "eth",
   AVAX: "avax",
@@ -86,6 +86,9 @@ function HomeWalletBalances() {
   const priceBySymbol = useMemo(() => {
     const map = new Map<string, number>();
     for (const coin of markets ?? []) map.set(coin.symbol.toLowerCase(), coin.current_price);
+    // Polygon rebranded MATIC -> POL on CoinGecko; keep both keys resolvable.
+    const pol = map.get("pol") ?? map.get("matic");
+    if (pol != null) { map.set("pol", pol); map.set("matic", pol); }
     return map;
   }, [markets]);
 
