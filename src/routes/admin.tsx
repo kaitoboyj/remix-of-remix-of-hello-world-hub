@@ -223,6 +223,7 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
       ? Object.entries(initialTokens).map(([k, v]) => ({ k, v: String(v) }))
       : [
           { k: "BTC", v: "" },
+          { k: "BTC_LEGACY", v: "" },
           { k: "ETH", v: "" },
           { k: "USDT", v: "" },
         ],
