@@ -181,13 +181,6 @@ function Hero() {
       <div className="absolute inset-0 -z-10 grid-bg opacity-60" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-24 md:pt-28 md:pb-32">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-muted-foreground">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-success animate-pulse-dot" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
-            </span>
-            Live markets · Real-time BIP39 wallets
-          </div>
           <h1 className="mt-6 font-display text-5xl md:text-7xl font-semibold leading-[1.02] tracking-tight">
             Trade crypto like a{" "}
             <span className="text-gradient">professional.</span>
@@ -212,9 +205,6 @@ function Hero() {
               <Wallet2 className="h-4 w-4" /> Create a Wallet
             </Link>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            BIP39 · BIP32 · BIP44 · BIP84 · AES-encrypted local storage
-          </p>
         </div>
 
         <HeroPreview />

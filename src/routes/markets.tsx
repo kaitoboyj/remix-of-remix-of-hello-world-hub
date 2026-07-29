@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Search, Star } from "lucide-react";
@@ -138,9 +138,6 @@ function MarketsPage() {
         </div>
       </div>
 
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Data from CoinGecko. <Link to="/trade" className="text-primary hover:underline">Open the terminal →</Link>
-      </p>
     </div>
   );
 }
