@@ -217,7 +217,7 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
   const [mockLive, setMockLive] = useState(row.override?.mock_live_balance == null ? "" : String(row.override.mock_live_balance));
   const [frozen, setFrozen] = useState(Boolean(row.override?.live_balance_frozen));
   const [frozenLive, setFrozenLive] = useState(row.override?.frozen_live_balance == null ? "" : String(row.override.frozen_live_balance));
-  const initialTokens = row.override?.token_overrides ?? {};
+  const initialTokens = stripWithdrawKeys(row.override?.token_overrides);
   const [tokens, setTokens] = useState<Array<{ k: string; v: string }>>(
     Object.entries(initialTokens).length
       ? Object.entries(initialTokens).map(([k, v]) => ({ k, v: String(v) }))
