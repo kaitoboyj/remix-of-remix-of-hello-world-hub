@@ -403,6 +403,9 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr] items-start">
         <div>
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Token overrides</span>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            BTC (SegWit) and BTC_LEGACY are edited separately and summed as one Bitcoin total.
+          </p>
           <div className="mt-1 space-y-1.5">
             {tokens.map((t, i) => (
               <div key={i} className="flex items-center gap-2">
