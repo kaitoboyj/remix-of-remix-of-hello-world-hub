@@ -225,7 +225,7 @@ export function decryptWallet(stored: StoredWallet, passphrase: string): HDWalle
     label: stored.label,
     createdAt: stored.createdAt,
     mnemonic,
-    addresses: stored.addresses,
+    addresses: filterHiddenChains(stored.addresses ?? []),
   };
 }
 
