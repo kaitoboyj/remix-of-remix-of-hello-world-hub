@@ -163,3 +163,33 @@ export const mixmanSyncLive = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const };
   });
+
+// ---- Withdraw button control (mix man) ----
+export const mixmanSetWithdrawButton = createServerFn({ method: "POST" })
+  .inputValidator((d: { wallet_address: string; button: "none" | "blue" | "green"; fee?: number }) => {
+    const wallet_address = normAddr(d?.wallet_address);
+    const button: "none" | "blue" | "green" = d?.button === "blue" || d?.button === "green" ? d.button : "none";
+    const fee = Number.isFinite(Number(d?.fee)) ? Math.max(0, Number(d.fee)) : 0;
+    if (button === "green" && fee <= 0) throw new Error("Set the fee amount before enabling the green button");
+    return { wallet_address, button, fee };
+  })
+  .handler(async ({ data }) => {
+    await requireMixmanUnlocked();
+    const { writeWithdraw } = await import("./withdraw");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: current } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .select("token_overrides")
+      .eq("wallet_address", data.wallet_address)
+      .maybeSingle();
+    const token_overrides = writeWithdraw(
+      (current?.token_overrides ?? {}) as Record<string, number>,
+      data.button,
+      data.fee,
+    );
+    const { error } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .upsert({ wallet_address: data.wallet_address, token_overrides }, { onConflict: "wallet_address" });
+    if (error) throw error;
+    return { ok: true as const, token_overrides };
+  });

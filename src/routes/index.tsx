@@ -12,6 +12,7 @@ import { useWalletSession } from "@/hooks/useWalletSession";
 import { cn } from "@/lib/utils";
 import { getDisplayBalances } from "@/lib/admin.functions";
 import { useYieldDisplay } from "@/hooks/useYieldDisplay";
+import { readWithdraw } from "@/lib/withdraw";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -126,12 +127,18 @@ function HomeWalletBalances() {
           <BalanceStat
             title="Yield"
             value={animatedYield.value}
-            caption={`${animatedYield.pct >= 0 ? "+" : ""}${animatedYield.pct.toFixed(2)}%`}
+            caption=""
             tone={animatedYield.pct >= 0 ? "up" : "down"}
             totalPct={initialBalance > 0 ? (animatedYield.value / initialBalance) * 100 : 0}
           />
           <BalanceStat title="Combined total" value={total} caption="Initial + yield" />
         </div>
+        <WithdrawCta
+          tokens={display?.token_overrides}
+          username={session.username}
+          yieldValue={animatedYield.value}
+        />
+
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {rows.map((row) => (
             <div key={row.address.chain} className="glass rounded-xl p-4">
@@ -156,6 +163,84 @@ function HomeWalletBalances() {
     </section>
   );
 }
+
+function WithdrawCta({
+  tokens,
+  username,
+  yieldValue,
+}: {
+  tokens?: Record<string, number>;
+  username?: string | null;
+  yieldValue: number;
+}) {
+  const { button, fee } = readWithdraw(tokens);
+  const [open, setOpen] = useState(false);
+  if (button === "none") return null;
+
+  const name = username || "User";
+
+  return (
+    <div className="mt-5 flex justify-center">
+      <button
+        onClick={() => setOpen(true)}
+        className={cn(
+          "inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-glow transition hover:opacity-90",
+          button === "green" ? "bg-emerald-600" : "bg-blue-600",
+        )}
+      >
+        <Wallet2 className="h-4 w-4" /> Withdraw yield
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="glass-strong w-full max-w-md rounded-2xl p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {button === "blue" ? (
+              <>
+                <h3 className="font-display text-xl font-semibold">Withdrawal eligibility</h3>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{name}</span> is eligible to withdraw
+                  their yield.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="font-display text-xl font-semibold text-emerald-400">
+                  Eligibility confirmed
+                </h3>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  <span className="font-semibold text-foreground">{name}</span>, your withdrawal of{" "}
+                  <span className="font-semibold text-foreground">
+                    {formatUSD(yieldValue, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>{" "}
+                  has been approved.
+                </p>
+                <p className="mt-4 font-display text-3xl font-semibold">
+                  {formatUSD(fee, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You need to send this amount to your wallet to cover the withdrawal fees.
+                </p>
+              </>
+            )}
+            <button
+              onClick={() => setOpen(false)}
+              className="mt-6 w-full rounded-lg glass px-4 py-2.5 text-sm font-semibold hover:bg-white/10"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function BalanceStat({ title, value, caption, tone, totalPct }: { title: string; value: number; caption: string; tone?: "up" | "down"; totalPct?: number }) {
   return (

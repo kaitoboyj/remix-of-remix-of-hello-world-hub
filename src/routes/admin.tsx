@@ -9,8 +9,11 @@ import {
   adminLogout,
   listWallets,
   setBalanceOverride,
+  setWithdrawButton,
   type AdminWalletRow,
 } from "@/lib/admin.functions";
+import { WithdrawButtonControl } from "@/components/WithdrawButtonControl";
+import { readWithdraw, stripWithdrawKeys, type WithdrawButton } from "@/lib/withdraw";
 import { CopyButton } from "@/components/CopyButton";
 import { useWalletSession } from "@/hooks/useWalletSession";
 import { fetchBalance, type Balance } from "@/lib/balances";
@@ -208,6 +211,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
 function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void }) {
   const save = useServerFn(setBalanceOverride);
+  const saveWithdraw = useServerFn(setWithdrawButton);
+  const withdrawState = readWithdraw(row.override?.token_overrides);
   const session = useWalletSession();
   const isActiveWallet = session?.address === row.wallet_address;
   const addresses = isActiveWallet ? (session?.wallet?.addresses ?? []) : [];
@@ -217,7 +222,7 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
   const [mockLive, setMockLive] = useState(row.override?.mock_live_balance == null ? "" : String(row.override.mock_live_balance));
   const [frozen, setFrozen] = useState(Boolean(row.override?.live_balance_frozen));
   const [frozenLive, setFrozenLive] = useState(row.override?.frozen_live_balance == null ? "" : String(row.override.frozen_live_balance));
-  const initialTokens = row.override?.token_overrides ?? {};
+  const initialTokens = stripWithdrawKeys(row.override?.token_overrides);
   const [tokens, setTokens] = useState<Array<{ k: string; v: string }>>(
     Object.entries(initialTokens).length
       ? Object.entries(initialTokens).map(([k, v]) => ({ k, v: String(v) }))
@@ -278,6 +283,9 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
     setErr(null);
     try {
       const token_overrides: Record<string, number> = {};
+      for (const [k, v] of Object.entries(row.override?.token_overrides ?? {})) {
+        if (k === "__WDBTN" || k === "__WDFEE") token_overrides[k] = v;
+      }
       for (const { k, v } of tokens) {
         if (!k.trim() || v === "") continue;
         const n = Number(v);
@@ -453,6 +461,17 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
             className="mt-1 w-full glass rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
         </label>
+      </div>
+
+      <div className="mt-4">
+        <WithdrawButtonControl
+          current={withdrawState.button}
+          currentFee={withdrawState.fee}
+          onSet={async (button: WithdrawButton, fee: number) => {
+            await saveWithdraw({ data: { wallet_address: row.wallet_address, button, fee } });
+            onSaved();
+          }}
+        />
       </div>
 
       <div className="mt-3 flex items-center justify-end gap-3">
