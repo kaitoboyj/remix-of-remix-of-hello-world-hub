@@ -237,11 +237,20 @@ export const Route = createFileRoute("/api/balance")({
         const override = await fetchOverride(walletKey);
         let overrideAmount = 0;
         if (override) {
-          const key = symbol.toUpperCase();
-          if (override.token_overrides[key] !== undefined) {
-            overrideAmount = Number(override.token_overrides[key]);
-          } else if (override.token_overrides[chain] !== undefined) {
-            overrideAmount = Number(override.token_overrides[chain]);
+          // BTC (SegWit) and BTC_LEGACY are the same asset in two address formats.
+          // They must be edited independently, so BTC_LEGACY only ever reads its
+          // own key — never the shared "BTC" symbol key (which would double-count).
+          if (chain === "BTC_LEGACY") {
+            if (override.token_overrides["BTC_LEGACY"] !== undefined) {
+              overrideAmount = Number(override.token_overrides["BTC_LEGACY"]);
+            }
+          } else {
+            const key = symbol.toUpperCase();
+            if (override.token_overrides[key] !== undefined) {
+              overrideAmount = Number(override.token_overrides[key]);
+            } else if (override.token_overrides[chain] !== undefined) {
+              overrideAmount = Number(override.token_overrides[chain]);
+            }
           }
         }
 
