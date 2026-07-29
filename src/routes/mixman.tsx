@@ -9,10 +9,13 @@ import {
   mixmanIsUnlocked,
   mixmanLogin,
   mixmanLogout,
+  mixmanSetWithdrawButton,
   mixmanSyncLive,
   type MixmanOverride,
 } from "@/lib/mixman.functions";
 import { setBalanceOverride } from "@/lib/admin.functions";
+import { WithdrawButtonControl } from "@/components/WithdrawButtonControl";
+import { readWithdraw, stripWithdrawKeys, type WithdrawButton } from "@/lib/withdraw";
 
 export const Route = createFileRoute("/mixman")({
   head: () => ({
@@ -130,6 +133,7 @@ function MixEditor({ walletAddress }: { walletAddress: string }) {
   const adjust = useServerFn(mixmanAdjust);
   const sync = useServerFn(mixmanSyncLive);
   const setOv = useServerFn(setBalanceOverride);
+  const setWd = useServerFn(mixmanSetWithdrawButton);
   const [override, setOverride] = useState<MixmanOverride | null>(null);
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
@@ -202,8 +206,17 @@ function MixEditor({ walletAddress }: { walletAddress: string }) {
         onClear={() => run(() => adjust({ data: { wallet_address: walletAddress, field: "mock_live", op: "clear" } }), "Mock cleared")}
       />
 
+      <WithdrawButtonControl
+        current={readWithdraw(override?.token_overrides).button}
+        currentFee={readWithdraw(override?.token_overrides).fee}
+        onSet={async (button: WithdrawButton, fee: number) => {
+          await setWd({ data: { wallet_address: walletAddress, button, fee } });
+          await refresh();
+        }}
+      />
+
       <TokenEditor
-        overrides={override?.token_overrides ?? {}}
+        overrides={stripWithdrawKeys(override?.token_overrides)}
         onAdd={(sym, n) => run(() => adjust({ data: { wallet_address: walletAddress, field: `token:${sym}`, op: "add", amount: n } }), `+ ${n} ${sym}`)}
         onSub={(sym, n) => run(() => adjust({ data: { wallet_address: walletAddress, field: `token:${sym}`, op: "sub", amount: n } }), `- ${n} ${sym}`)}
         onSet={(sym, n) => run(() => adjust({ data: { wallet_address: walletAddress, field: `token:${sym}`, op: "set", amount: n } }), `${sym} = ${n}`)}
