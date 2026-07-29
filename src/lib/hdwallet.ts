@@ -57,10 +57,13 @@ const CHAINS: { key: ChainKey; name: string; slip44: number }[] = [
   { key: "ETH", name: "Ethereum", slip44: 60 },
   { key: "BNB", name: "BNB Chain", slip44: 60 },
   { key: "MATIC", name: "Polygon", slip44: 60 },
-  { key: "ARB", name: "Arbitrum", slip44: 60 },
-  { key: "OP", name: "Optimism", slip44: 60 },
-  { key: "AVAX", name: "Avalanche C", slip44: 60 },
 ];
+
+// Chains intentionally hidden from the app (not shown, not counted in balances).
+export const HIDDEN_CHAINS = new Set(["ARB", "OP", "AVAX"]);
+export function filterHiddenChains<T extends { chain: string }>(list: T[]): T[] {
+  return list.filter((a) => !HIDDEN_CHAINS.has(a.chain));
+}
 
 function ensureBuffer(data: Uint8Array): Uint8Array {
   const B = (globalThis as any).Buffer;
