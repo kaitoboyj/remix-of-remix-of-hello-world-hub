@@ -138,9 +138,6 @@ function MarketsPage() {
         </div>
       </div>
 
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Data from CoinGecko. <Link to="/trade" className="text-primary hover:underline">Open the terminal →</Link>
-      </p>
     </div>
   );
 }
