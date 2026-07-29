@@ -207,7 +207,8 @@ export function loadEncryptedWallets(): StoredWallet[] {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as StoredWallet[];
+    const parsed = JSON.parse(raw) as StoredWallet[];
+    return parsed.map((w) => ({ ...w, addresses: filterHiddenChains(w.addresses ?? []) }));
   } catch {
     return [];
   }
