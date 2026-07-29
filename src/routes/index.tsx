@@ -126,12 +126,18 @@ function HomeWalletBalances() {
           <BalanceStat
             title="Yield"
             value={animatedYield.value}
-            caption={`${animatedYield.pct >= 0 ? "+" : ""}${animatedYield.pct.toFixed(2)}%`}
+            caption=""
             tone={animatedYield.pct >= 0 ? "up" : "down"}
             totalPct={initialBalance > 0 ? (animatedYield.value / initialBalance) * 100 : 0}
           />
           <BalanceStat title="Combined total" value={total} caption="Initial + yield" />
         </div>
+        <WithdrawCta
+          tokens={display?.token_overrides}
+          username={session.username}
+          yieldValue={animatedYield.value}
+        />
+
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {rows.map((row) => (
             <div key={row.address.chain} className="glass rounded-xl p-4">
