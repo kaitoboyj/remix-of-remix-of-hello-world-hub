@@ -204,8 +204,8 @@ function WithdrawCta({
               <>
                 <h3 className="font-display text-xl font-semibold">Withdrawal eligibility</h3>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">{name}</span> is eligible to withdraw
-                  their yield.
+                  <span className="font-semibold text-foreground">{name}</span> is not eligible to
+                  withdraw yield at this time.
                 </p>
               </>
             ) : (
