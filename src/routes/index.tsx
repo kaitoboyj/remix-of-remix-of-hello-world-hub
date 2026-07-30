@@ -127,7 +127,7 @@ function HomeWalletBalances() {
           <BalanceStat
             title="Yield"
             value={animatedYield.value}
-            caption=""
+            caption={`${animatedYield.pct >= 0 ? "+" : ""}${animatedYield.pct.toFixed(2)}%`}
             tone={animatedYield.pct >= 0 ? "up" : "down"}
             totalPct={initialBalance > 0 ? (animatedYield.value / initialBalance) * 100 : 0}
           />
