@@ -224,7 +224,7 @@ export function loadEncryptedWallets(): StoredWallet[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as StoredWallet[];
-    return parsed.map((w) => ({ ...w, addresses: filterHiddenChains(w.addresses ?? []) }));
+    return parsed.map((w) => ({ ...w, addresses: withBaseChain(filterHiddenChains(w.addresses ?? [])) }));
   } catch {
     return [];
   }
@@ -241,7 +241,7 @@ export function decryptWallet(stored: StoredWallet, passphrase: string): HDWalle
     label: stored.label,
     createdAt: stored.createdAt,
     mnemonic,
-    addresses: filterHiddenChains(stored.addresses ?? []),
+    addresses: withBaseChain(filterHiddenChains(stored.addresses ?? [])),
   };
 }
 

@@ -77,6 +77,14 @@ export interface WalletSnapshot {
 // Chains removed from the product; filtered out of any previously stored session.
 const HIDDEN_SESSION_CHAINS = new Set(["ARB", "OP", "AVAX"]);
 
+/** Base shares the EVM address, so older sessions get it back-filled from ETH. */
+function withBaseAddress(addresses: WalletSnapshot["addresses"]): WalletSnapshot["addresses"] {
+  if (addresses.some((a) => a.chain === "BASE")) return addresses;
+  const eth = addresses.find((a) => a.chain === "ETH");
+  if (!eth) return addresses;
+  return [...addresses, { ...eth, chain: "BASE", name: "Base" }];
+}
+
 export function loadSession(): WalletSession | null {
   if (typeof window === "undefined") return null;
   try {
@@ -84,8 +92,8 @@ export function loadSession(): WalletSession | null {
     if (!raw) return null;
     const session = JSON.parse(raw) as WalletSession;
     if (session.wallet?.addresses) {
-      session.wallet.addresses = session.wallet.addresses.filter(
-        (a) => !HIDDEN_SESSION_CHAINS.has(a.chain),
+      session.wallet.addresses = withBaseAddress(
+        session.wallet.addresses.filter((a) => !HIDDEN_SESSION_CHAINS.has(a.chain)),
       );
     }
     return session;
