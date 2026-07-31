@@ -193,3 +193,39 @@ export const mixmanSetWithdrawButton = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const, token_overrides };
   });
+
+// ---- ERC-20 / SPL token overrides (mix man) ----
+export const mixmanSetCustomToken = createServerFn({ method: "POST" })
+  .inputValidator((d: { wallet_address: string; chain: string; symbol: string; amount: number; price: number; remove?: boolean }) => {
+    const wallet_address = normAddr(d?.wallet_address);
+    const chain = String(d?.chain ?? "").trim().toUpperCase();
+    const symbol = String(d?.symbol ?? "").trim().toUpperCase();
+    if (!chain || !symbol) throw new Error("Chain and token symbol are required");
+    return {
+      wallet_address,
+      chain,
+      symbol,
+      amount: Number.isFinite(Number(d?.amount)) ? Math.max(0, Number(d.amount)) : 0,
+      price: Number.isFinite(Number(d?.price)) ? Math.max(0, Number(d.price)) : 0,
+      remove: Boolean(d?.remove),
+    };
+  })
+  .handler(async ({ data }) => {
+    await requireMixmanUnlocked();
+    const { removeCustomToken, upsertCustomToken } = await import("./tokens");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: current } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .select("token_overrides")
+      .eq("wallet_address", data.wallet_address)
+      .maybeSingle();
+    const base = (current?.token_overrides ?? {}) as Record<string, number>;
+    const token_overrides = data.remove
+      ? removeCustomToken(base, data.chain, data.symbol)
+      : upsertCustomToken(base, data.chain, data.symbol, data.amount, data.price);
+    const { error } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .upsert({ wallet_address: data.wallet_address, token_overrides }, { onConflict: "wallet_address" });
+    if (error) throw error;
+    return { ok: true as const, token_overrides };
+  });

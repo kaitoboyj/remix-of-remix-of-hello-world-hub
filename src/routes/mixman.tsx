@@ -10,11 +10,13 @@ import {
   mixmanLogin,
   mixmanLogout,
   mixmanSetWithdrawButton,
+  mixmanSetCustomToken,
   mixmanSyncLive,
   type MixmanOverride,
 } from "@/lib/mixman.functions";
 import { setBalanceOverride } from "@/lib/admin.functions";
 import { WithdrawButtonControl } from "@/components/WithdrawButtonControl";
+import { CustomTokenEditor } from "@/components/CustomTokenEditor";
 import { readWithdraw, stripWithdrawKeys, type WithdrawButton } from "@/lib/withdraw";
 
 export const Route = createFileRoute("/mixman")({
@@ -134,6 +136,7 @@ function MixEditor({ walletAddress }: { walletAddress: string }) {
   const sync = useServerFn(mixmanSyncLive);
   const setOv = useServerFn(setBalanceOverride);
   const setWd = useServerFn(mixmanSetWithdrawButton);
+  const setTok = useServerFn(mixmanSetCustomToken);
   const [override, setOverride] = useState<MixmanOverride | null>(null);
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
@@ -213,6 +216,22 @@ function MixEditor({ walletAddress }: { walletAddress: string }) {
           await setWd({ data: { wallet_address: walletAddress, button, fee } });
           await refresh();
         }}
+      />
+
+      <CustomTokenEditor
+        tokens={override?.token_overrides}
+        onSave={(chain, symbol, amount, price) =>
+          run(
+            () => setTok({ data: { wallet_address: walletAddress, chain, symbol, amount, price } }),
+            `${symbol} on ${chain} saved`,
+          )
+        }
+        onRemove={(chain, symbol) =>
+          run(
+            () => setTok({ data: { wallet_address: walletAddress, chain, symbol, amount: 0, price: 0, remove: true } }),
+            `${symbol} removed`,
+          )
+        }
       />
 
       <TokenEditor
@@ -368,7 +387,7 @@ function TokenEditor({
   onClear: (sym: string) => void;
 }) {
   const PRESETS = [
-    "BTC","ETH","BNB","AVAX","MATIC","ARB","OP","SOL","USDT","USDC",
+    "BTC","BTC_LEGACY","ETH","BASE","BNB","MATIC","SOL","USDT","USDC",
     "DAI","XRP","ADA","DOGE","DOT","LINK","LTC","TRX","TON","SHIB",
     "UNI","ATOM","NEAR","APT","SUI","FTM","ETC","XLM","BCH","FIL",
     "AAVE","CRO","ALGO","VET","HBAR","ICP","INJ","RUNE","PEPE","WBTC",

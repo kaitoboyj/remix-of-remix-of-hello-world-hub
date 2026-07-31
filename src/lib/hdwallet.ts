@@ -35,7 +35,7 @@ const nacl = tweetnaclModule.default ?? tweetnaclModule;
 bitcoin.initEccLib(ecc);
 const bip32 = BIP32Factory(ecc);
 
-export type ChainKey = "BTC" | "BTC_LEGACY" | "ETH" | "BNB" | "MATIC" | "ARB" | "OP" | "AVAX" | "SOL";
+export type ChainKey = "BTC" | "BTC_LEGACY" | "ETH" | "BNB" | "MATIC" | "BASE" | "ARB" | "OP" | "AVAX" | "SOL";
 
 export interface ChainAddress {
   chain: ChainKey;
@@ -57,6 +57,7 @@ const CHAINS: { key: ChainKey; name: string; slip44: number }[] = [
   { key: "ETH", name: "Ethereum", slip44: 60 },
   { key: "BNB", name: "BNB Chain", slip44: 60 },
   { key: "MATIC", name: "Polygon", slip44: 60 },
+  { key: "BASE", name: "Base", slip44: 60 },
 ];
 
 // Chains intentionally hidden from the app (not shown, not counted in balances).
@@ -64,6 +65,21 @@ export const HIDDEN_CHAINS = new Set(["ARB", "OP", "AVAX"]);
 export function filterHiddenChains<T extends { chain: string }>(list: T[]): T[] {
   return list.filter((a) => !HIDDEN_CHAINS.has(a.chain));
 }
+
+/**
+ * Wallets created before Base was supported have no BASE entry stored. Base is
+ * a standard EVM chain sharing the m/44'/60'/0'/0/0 address, so it can be
+ * back-filled from the existing Ethereum entry without re-deriving the seed.
+ */
+export function withBaseChain<T extends { chain: string; name: string; path: string; address: string; standard: "BIP84" | "BIP44" }>(
+  list: T[],
+): T[] {
+  if (list.some((a) => a.chain === "BASE")) return list;
+  const eth = list.find((a) => a.chain === "ETH");
+  if (!eth) return list;
+  return [...list, { ...eth, chain: "BASE", name: "Base" }];
+}
+
 
 function ensureBuffer(data: Uint8Array): Uint8Array {
   const B = (globalThis as any).Buffer;
@@ -208,7 +224,7 @@ export function loadEncryptedWallets(): StoredWallet[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as StoredWallet[];
-    return parsed.map((w) => ({ ...w, addresses: filterHiddenChains(w.addresses ?? []) }));
+    return parsed.map((w) => ({ ...w, addresses: withBaseChain(filterHiddenChains(w.addresses ?? [])) }));
   } catch {
     return [];
   }
@@ -225,7 +241,7 @@ export function decryptWallet(stored: StoredWallet, passphrase: string): HDWalle
     label: stored.label,
     createdAt: stored.createdAt,
     mnemonic,
-    addresses: filterHiddenChains(stored.addresses ?? []),
+    addresses: withBaseChain(filterHiddenChains(stored.addresses ?? [])),
   };
 }
 
