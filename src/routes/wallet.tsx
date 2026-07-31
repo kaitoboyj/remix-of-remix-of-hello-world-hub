@@ -21,6 +21,7 @@ import { derivePrivateKeyFromMnemonic, rememberPrivateKey, signWalletOwnership }
 import { formatUSD, marketsQuery } from "@/lib/prices";
 import { getDisplayBalances } from "@/lib/admin.functions";
 import { useYieldDisplay } from "@/hooks/useYieldDisplay";
+import { fetchWalletTokens, type WalletToken } from "@/lib/tokens";
 
 // NOTE: All wallet code is client-only. We dynamic-import to keep the SSR bundle clean.
 
@@ -413,6 +414,7 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
   const [copied, setCopied] = useState<string | null>(null);
   const [balances, setBalances] = useState<Record<string, Balance | "loading">>({});
   const [display, setDisplay] = useState<DisplayOverrides | null>(null);
+  const [tokens, setTokens] = useState<WalletToken[]>([]);
   const { data: markets } = useQuery(marketsQuery(100));
   const getDisplay = useServerFn(getDisplayBalances);
   const walletKey = wallet.addresses.find((a) => a.chain === "ETH")?.address ?? wallet.addresses[0]?.address ?? "";
@@ -453,6 +455,17 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
     return () => { cancelled = true; };
   }, [getDisplay, walletKey]);
 
+  useEffect(() => {
+    if (!walletKey) return;
+    let cancelled = false;
+    const load = () => {
+      fetchWalletTokens(walletKey, wallet.addresses).then((t) => { if (!cancelled) setTokens(t); });
+    };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [walletKey, wallet.addresses]);
+
   const priceBySymbol = useMemo(() => {
     const map = new Map<string, number>();
     for (const coin of markets ?? []) map.set(coin.symbol.toLowerCase(), coin.current_price);
@@ -462,7 +475,8 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
     return map;
   }, [markets]);
 
-  const realTotal = wallet.addresses.reduce((sum, address) => {
+  const tokensUsd = tokens.reduce((sum, t) => sum + (t.usd ?? 0), 0);
+  const realTotal = tokensUsd + wallet.addresses.reduce((sum, address) => {
     const balance = balances[address.chain];
     if (!balance || balance === "loading") return sum;
     const symbol = PRICE_SYMBOL[address.chain] ?? balance.symbol.toLowerCase();
@@ -623,6 +637,36 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
           ))}
         </div>
       </div>
+
+      {tokens.length > 0 && (
+        <div className="glass rounded-2xl p-6">
+          <h3 className="font-display text-lg font-semibold mb-1">Tokens</h3>
+          <p className="mb-4 text-xs text-muted-foreground">ERC-20 and SPL tokens received on any supported chain.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {tokens.map((t) => (
+              <div key={`${t.chain}-${t.symbol}`} className="glass rounded-xl p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{t.name || t.symbol}</p>
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                      {t.symbol} · {t.chainName}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-sm">{t.amount.toLocaleString(undefined, { maximumFractionDigits: 6 })}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatUSD(t.usd, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+                {t.contract && (
+                  <p className="mt-3 font-mono text-[10px] break-all text-muted-foreground/70">{t.contract}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

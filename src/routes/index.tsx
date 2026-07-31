@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { getDisplayBalances } from "@/lib/admin.functions";
 import { useYieldDisplay } from "@/hooks/useYieldDisplay";
 import { readWithdraw } from "@/lib/withdraw";
+import { fetchWalletTokens, type WalletToken } from "@/lib/tokens";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -38,6 +39,7 @@ const PRICE_SYMBOL: Record<string, string> = {
   ETH: "eth",
   BNB: "bnb",
   MATIC: "pol",
+  BASE: "eth",
   ARB: "eth",
   OP: "eth",
   AVAX: "avax",
@@ -60,6 +62,14 @@ function HomeWalletBalances() {
   const getDisplay = useServerFn(getDisplayBalances);
   const [balances, setBalances] = useState<Record<string, Balance | "loading">>({});
   const [display, setDisplay] = useState<DisplayOverrides | null>(null);
+  const [tokens, setTokens] = useState<WalletToken[]>([]);
+
+  useEffect(() => {
+    if (!walletKey || addresses.length === 0) return;
+    let cancelled = false;
+    fetchWalletTokens(walletKey, addresses).then((t) => { if (!cancelled) setTokens(t); });
+    return () => { cancelled = true; };
+  }, [addresses, walletKey]);
 
   useEffect(() => {
     if (addresses.length === 0) return;
@@ -101,7 +111,8 @@ function HomeWalletBalances() {
     const usd = amount == null ? null : amount * price;
     return { address, amount, symbol, usd, loading: balance === "loading" || balance === undefined };
   });
-  const realTotal = rows.reduce((sum, row) => sum + (row.usd ?? 0), 0);
+  const tokensUsd = tokens.reduce((sum, t) => sum + (t.usd ?? 0), 0);
+  const realTotal = rows.reduce((sum, row) => sum + (row.usd ?? 0), 0) + tokensUsd;
   const initialBalance = display?.live_balance_frozen && display.frozen_live_balance != null
     ? display.frozen_live_balance
     : realTotal + (display?.mock_live_balance ?? 0);
