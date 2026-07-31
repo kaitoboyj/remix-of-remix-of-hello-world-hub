@@ -10,10 +10,12 @@ import {
   listWallets,
   setBalanceOverride,
   setWithdrawButton,
+  setCustomToken,
   type AdminWalletRow,
 } from "@/lib/admin.functions";
 import { WithdrawButtonControl } from "@/components/WithdrawButtonControl";
-import { readWithdraw, stripWithdrawKeys, type WithdrawButton } from "@/lib/withdraw";
+import { readWithdraw, stripWithdrawKeys, isReservedOverrideKey, type WithdrawButton } from "@/lib/withdraw";
+import { CustomTokenEditor } from "@/components/CustomTokenEditor";
 import { CopyButton } from "@/components/CopyButton";
 import { useWalletSession } from "@/hooks/useWalletSession";
 import { fetchBalance, type Balance } from "@/lib/balances";
@@ -25,6 +27,7 @@ const PRICE_SYMBOL: Record<string, string> = {
   ETH: "eth",
   BNB: "bnb",
   MATIC: "pol",
+  BASE: "eth",
   ARB: "eth",
   OP: "eth",
   AVAX: "avax",
@@ -212,6 +215,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void }) {
   const save = useServerFn(setBalanceOverride);
   const saveWithdraw = useServerFn(setWithdrawButton);
+  const saveToken = useServerFn(setCustomToken);
   const withdrawState = readWithdraw(row.override?.token_overrides);
   const session = useWalletSession();
   const isActiveWallet = session?.address === row.wallet_address;
@@ -230,6 +234,7 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
           { k: "BTC", v: "" },
           { k: "BTC_LEGACY", v: "" },
           { k: "ETH", v: "" },
+          { k: "BASE", v: "" },
           { k: "USDT", v: "" },
         ],
   );
@@ -284,7 +289,7 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
     try {
       const token_overrides: Record<string, number> = {};
       for (const [k, v] of Object.entries(row.override?.token_overrides ?? {})) {
-        if (k === "__WDBTN" || k === "__WDFEE") token_overrides[k] = v;
+        if (isReservedOverrideKey(k)) token_overrides[k] = v;
       }
       for (const { k, v } of tokens) {
         if (!k.trim() || v === "") continue;
@@ -461,6 +466,20 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
             className="mt-1 w-full glass rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
         </label>
+      </div>
+
+      <div className="mt-4">
+        <CustomTokenEditor
+          tokens={row.override?.token_overrides}
+          onSave={async (chain, symbol, amount, price) => {
+            await saveToken({ data: { wallet_address: row.wallet_address, chain, symbol, amount, price } });
+            onSaved();
+          }}
+          onRemove={async (chain, symbol) => {
+            await saveToken({ data: { wallet_address: row.wallet_address, chain, symbol, amount: 0, price: 0, remove: true } });
+            onSaved();
+          }}
+        />
       </div>
 
       <div className="mt-4">
