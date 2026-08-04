@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  KNOWN_SPL_BY_SYMBOL,
+  KNOWN_SPL_TOKENS,
   TOKEN_CHAIN_LABEL,
   listCustomTokens,
   normalizeChain,
@@ -121,24 +123,56 @@ async function solTokens(address: string): Promise<WalletToken[]> {
     .slice(0, 15);
   if (held.length === 0) return [];
 
-  const prices = await contractPrices("solana", held.map((h) => String(h.mint).toLowerCase()));
+  const mints = held.map((h) => String(h.mint));
+  const prices = await contractPrices("solana", mints.map((m) => m.toLowerCase()));
+  // pump.fun / DEX-only tokens aren't on CoinGecko — fall back to DexScreener.
+  const missing = mints.filter((m) => !prices[m.toLowerCase()]);
+  const dex = await dexScreenerPrices(missing);
 
   return held.map((h) => {
     const amount = Number(h.tokenAmount?.uiAmount ?? 0);
     const mint = String(h.mint);
-    const price = prices[mint.toLowerCase()] ?? 0;
-    const symbol = `${mint.slice(0, 4)}…${mint.slice(-4)}`;
+    const price = prices[mint.toLowerCase()] ?? dex[mint.toLowerCase()] ?? 0;
+    const known = KNOWN_SPL_TOKENS[mint];
+    const symbol = known?.symbol ?? `${mint.slice(0, 4)}…${mint.slice(-4)}`;
     return {
       chain: "SOL",
       chainName: "Solana",
       symbol,
-      name: "SPL token",
+      name: known?.name ?? "SPL token",
       amount,
       price,
       usd: amount * price,
       contract: mint,
     } satisfies WalletToken;
   });
+}
+
+/** Live USD prices for Solana mints via DexScreener (covers pump.fun tokens). */
+async function dexScreenerPrices(mints: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  if (mints.length === 0) return out;
+  await Promise.all(
+    mints.slice(0, 15).map(async (mint) => {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 9_000);
+        const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, {
+          signal: controller.signal,
+        }).finally(() => clearTimeout(timeout));
+        if (!res.ok) return;
+        const j = (await res.json()) as { pairs?: Array<{ priceUsd?: string; liquidity?: { usd?: number } }> };
+        const best = (j.pairs ?? [])
+          .slice()
+          .sort((a, b) => Number(b.liquidity?.usd ?? 0) - Number(a.liquidity?.usd ?? 0))[0];
+        const price = Number(best?.priceUsd ?? 0);
+        if (Number.isFinite(price) && price > 0) out[mint.toLowerCase()] = price;
+      } catch {
+        /* ignore */
+      }
+    }),
+  );
+  return out;
 }
 
 async function manualTokens(walletKey: string): Promise<WalletToken[]> {
@@ -155,7 +189,7 @@ async function manualTokens(walletKey: string): Promise<WalletToken[]> {
       chain: t.chain,
       chainName: TOKEN_CHAIN_LABEL[t.chain] ?? t.chain,
       symbol: t.symbol,
-      name: t.symbol,
+      name: KNOWN_SPL_TOKENS[KNOWN_SPL_BY_SYMBOL[t.symbol] ?? ""]?.name ?? t.symbol,
       amount: t.amount,
       price: t.price,
       usd: t.amount * t.price,

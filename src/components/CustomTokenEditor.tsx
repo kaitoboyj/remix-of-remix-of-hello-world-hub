@@ -123,6 +123,16 @@ export function CustomTokenEditor({
         />
         <button
           type="button"
+          onClick={() => {
+            setChain("SOL");
+            setSymbol("APEPE");
+          }}
+          className="rounded-lg glass px-2.5 py-2 text-[11px] hover:bg-white/10"
+        >
+          APEPE (SOL)
+        </button>
+        <button
+          type="button"
           disabled={!valid || busy}
           onClick={submit}
           className="inline-flex items-center gap-1 rounded-lg bg-[image:var(--gradient-brand)] px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-40"
