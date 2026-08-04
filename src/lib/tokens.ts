@@ -25,6 +25,18 @@ export const TOKEN_CHAIN_LABEL: Record<string, string> = {
   SOL: "Solana",
 };
 
+/**
+ * Known SPL mints so pump.fun / community tokens show a real ticker and name
+ * instead of a truncated mint address.
+ */
+export const KNOWN_SPL_TOKENS: Record<string, { symbol: string; name: string }> = {
+  G1UFaNzuywENiHwT9Usem3q8ym4kwMJodmGgaKoPpump: { symbol: "APEPE", name: "Apepe" },
+};
+
+export const KNOWN_SPL_BY_SYMBOL: Record<string, string> = Object.fromEntries(
+  Object.entries(KNOWN_SPL_TOKENS).map(([mint, m]) => [m.symbol, mint]),
+);
+
 export interface WalletToken {
   chain: string;
   chainName: string;
