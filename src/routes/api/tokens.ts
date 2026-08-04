@@ -188,7 +188,7 @@ async function manualTokens(walletKey: string): Promise<WalletToken[]> {
       chain: t.chain,
       chainName: TOKEN_CHAIN_LABEL[t.chain] ?? t.chain,
       symbol: t.symbol,
-      name: t.symbol,
+      name: KNOWN_SPL_TOKENS[KNOWN_SPL_BY_SYMBOL[t.symbol] ?? ""]?.name ?? t.symbol,
       amount: t.amount,
       price: t.price,
       usd: t.amount * t.price,
