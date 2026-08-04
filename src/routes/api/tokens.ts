@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  KNOWN_SPL_TOKENS,
   TOKEN_CHAIN_LABEL,
   listCustomTokens,
   normalizeChain,
