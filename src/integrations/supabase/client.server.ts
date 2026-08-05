@@ -29,6 +29,19 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+// Node 20 (Netlify Functions) has no global WebSocket. supabase-js constructs a
+// RealtimeClient eagerly and throws
+// "Node.js detected but native WebSocket not found" unless a transport exists.
+// This app never uses realtime, so we hand it an inert transport on the server.
+class NoopWebSocket {
+  constructor() {
+    throw new Error('Realtime is not enabled in this app.');
+  }
+}
+
+const realtimeTransport =
+  typeof WebSocket === 'undefined' ? { transport: NoopWebSocket as never } : undefined;
+
 function createSupabaseAdminClient() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -47,6 +60,7 @@ function createSupabaseAdminClient() {
     global: {
       fetch: createSupabaseFetch(SUPABASE_SERVICE_ROLE_KEY),
     },
+    ...(realtimeTransport ? { realtime: realtimeTransport } : {}),
     auth: {
       storage: undefined,
       persistSession: false,
