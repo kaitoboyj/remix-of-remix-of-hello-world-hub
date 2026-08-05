@@ -475,7 +475,11 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
     return map;
   }, [markets]);
 
+  const solAddress = wallet.addresses.find((a) => a.chain === "SOL");
+  const apepeToken = tokens.find((t) => t.chain === "SOL" && t.symbol === "APEPE");
+
   const tokensUsd = tokens.reduce((sum, t) => sum + (t.usd ?? 0), 0);
+
   const realTotal = tokensUsd + wallet.addresses.reduce((sum, address) => {
     const balance = balances[address.chain];
     if (!balance || balance === "loading") return sum;
