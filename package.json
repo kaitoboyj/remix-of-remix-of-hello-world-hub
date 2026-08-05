@@ -2,7 +2,7 @@
   "name": "tanstack_start_ts",
   "private": true,
   "engines": {
-    "node": ">=22 <23"
+    "node": ">=20 <23"
   },
   "sideEffects": [
     "src/lib/buffer-polyfill.ts"

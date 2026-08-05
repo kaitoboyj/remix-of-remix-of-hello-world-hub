@@ -18,5 +18,8 @@ export default defineConfig({
   nitro: { preset: "netlify" },
   vite: {
     plugins: [polyfills],
+    build: {
+      rollupOptions: { treeshake: false },
+    },
   },
 });
