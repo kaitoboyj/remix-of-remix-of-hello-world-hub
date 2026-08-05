@@ -4,10 +4,9 @@ import { ethereum } from "thirdweb/chains";
 import { BridgeWidget, ThirdwebProvider, useConnect } from "thirdweb/react";
 import { privateKeyToAccount, createWalletAdapter } from "thirdweb/wallets";
 
-// Polyfill WebSocket for Node.js environments (Netlify)
-if (typeof WebSocket === "undefined") {
-  global.WebSocket = require("ws") as any;
-}
+// This component is only ever loaded in the browser (dynamic import from
+// SwapWidget), so the native WebSocket is always available here.
+
 
 interface InnerProps {
   clientId: string;
