@@ -635,8 +635,36 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
               </div>
             </div>
           ))}
+
+          {solAddress && (
+            <div className="glass rounded-xl p-4 hover:bg-white/[.04] transition">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold">Apepe</p>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">APEPE · SPL (Solana)</p>
+                </div>
+                <button
+                  onClick={() => copy(solAddress.address, "APEPE")}
+                  className="rounded-md glass px-2 py-1.5 hover:bg-white/10"
+                  aria-label="Copy address"
+                >
+                  {copied === "APEPE" ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+              <p className="mt-3 font-mono text-xs break-all text-muted-foreground">{solAddress.address}</p>
+              <p className="mt-2 text-[10px] font-mono text-muted-foreground/70">{solAddress.path}</p>
+              <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Balance</span>
+                <span className="font-mono text-sm">
+                  {(apepeToken?.amount ?? 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}{" "}
+                  <span className="text-muted-foreground">APEPE</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
 
       {tokens.length > 0 && (
         <div className="glass rounded-2xl p-6">
