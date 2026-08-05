@@ -13,8 +13,11 @@ command = "npm run build"
 publish = "dist"
 
 [build.environment]
-NODE_VERSION = "20"
+NODE_VERSION = "22"
 NODE_OPTIONS = "--max-old-space-size=4096"
+# Force the Nitro Netlify preset (SSR function + dist/ static assets).
+NITRO_PRESET = "netlify"
+
 
 [[headers]]
 for = "/*"
