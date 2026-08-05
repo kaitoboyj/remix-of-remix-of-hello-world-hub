@@ -25,17 +25,8 @@ export function SwapWidgetInner(props: InnerProps) {
 }
 
 function Bridge({ clientId, privateKey, onSuccess, onError }: InnerProps) {
-  const client = useMemo(() => {
-    // Configure thirdweb client with custom transport for Node.js environments
-    const clientConfig: any = { clientId };
-    
-    // Add custom transport for Node.js environments
-    if (typeof window === "undefined" && typeof WebSocket !== "undefined") {
-      clientConfig.transport = require("ws");
-    }
-    
-    return createThirdwebClient(clientConfig);
-  }, [clientId]);
+  const client = useMemo(() => createThirdwebClient({ clientId }), [clientId]);
+
   const { connect } = useConnect();
 
   useEffect(() => {
