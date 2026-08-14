@@ -153,12 +153,13 @@ function pick(c: Coin, k: SortKey) {
   }
 }
 
-function SortTh({ label, k, sort, dir, onClick }: {
-  label: string; k: SortKey; sort: SortKey; dir: "asc" | "desc"; onClick: (k: SortKey) => void;
+function SortTh({ label, k, sort, dir, onClick, className }: {
+  label: string; k: SortKey; sort: SortKey; dir: "asc" | "desc"; onClick: (k: SortKey) => void; className?: string;
 }) {
   const active = sort === k;
   return (
-    <th className="text-right py-3">
+    <th className={cn("text-right py-3", className)}>
+
       <button
         onClick={() => onClick(k)}
         className={cn("inline-flex items-center gap-1 hover:text-foreground", active && "text-foreground")}
