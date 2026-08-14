@@ -101,7 +101,7 @@ function MarketsPage() {
                 const up = (c.price_change_percentage_24h ?? 0) >= 0;
                 return (
                   <tr key={c.id} className="hover:bg-white/[.03] transition">
-                    <td className="pl-4">
+                    <td className="pl-2 sm:pl-4">
                       <button
                         onClick={() => toggleFav(c.id)}
                         className={cn("p-1 rounded", favs.has(c.id) ? "text-gold" : "text-muted-foreground hover:text-foreground")}
@@ -110,27 +110,28 @@ function MarketsPage() {
                         <Star className="h-4 w-4" fill={favs.has(c.id) ? "currentColor" : "none"} />
                       </button>
                     </td>
-                    <td className="py-4 text-muted-foreground">{c.market_cap_rank}</td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <img src={c.image} alt="" className="h-7 w-7 rounded-full" />
-                        <div>
-                          <p className="font-medium">{c.name}</p>
+                    <td className="hidden sm:table-cell py-4 text-muted-foreground">{c.market_cap_rank}</td>
+                    <td className="py-3 pr-2">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <img src={c.image} alt="" className="h-7 w-7 shrink-0 rounded-full" />
+                        <div className="min-w-0">
+                          <p className="font-medium break-words">{c.name}</p>
                           <p className="text-xs text-muted-foreground">{c.symbol.toUpperCase()}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="text-right font-mono">{formatUSD(c.current_price)}</td>
-                    <td className={cn("text-right font-mono", up ? "text-success" : "text-destructive")}>
+                    <td className="text-right font-mono whitespace-nowrap">{formatUSD(c.current_price)}</td>
+                    <td className={cn("pl-2 pr-2 sm:pr-0 text-right font-mono whitespace-nowrap", up ? "text-success" : "text-destructive")}>
                       {formatPct(c.price_change_percentage_24h)}
                     </td>
-                    <td className="text-right font-mono text-muted-foreground">${formatCompact(c.total_volume)}</td>
-                    <td className="text-right font-mono text-muted-foreground">${formatCompact(c.market_cap)}</td>
-                    <td className="pr-4">
+                    <td className="hidden lg:table-cell text-right font-mono text-muted-foreground">${formatCompact(c.total_volume)}</td>
+                    <td className="hidden md:table-cell text-right font-mono text-muted-foreground">${formatCompact(c.market_cap)}</td>
+                    <td className="hidden xl:table-cell pr-4">
                       <div className="flex justify-end">
                         <Sparkline data={c.sparkline_in_7d?.price ?? []} up={up} width={120} height={36} />
                       </div>
                     </td>
+
                   </tr>
                 );
               })}
