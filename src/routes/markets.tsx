@@ -78,19 +78,20 @@ function MarketsPage() {
 
       <div className="glass rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[340px] text-sm">
             <thead className="text-xs uppercase tracking-wider text-muted-foreground bg-black/20">
               <tr>
                 <th className="w-8"></th>
-                <th className="text-left py-3 pl-4">#</th>
+                <th className="hidden sm:table-cell text-left py-3 pl-4">#</th>
                 <th className="text-left py-3">Asset</th>
                 <SortTh label="Price" k="price" sort={sort} dir={dir} onClick={toggleSort} />
                 <SortTh label="24h %" k="change" sort={sort} dir={dir} onClick={toggleSort} />
-                <SortTh label="Volume" k="volume" sort={sort} dir={dir} onClick={toggleSort} />
-                <SortTh label="Market Cap" k="market_cap" sort={sort} dir={dir} onClick={toggleSort} />
-                <th className="text-right py-3 pr-4">Last 7d</th>
+                <SortTh label="Volume" k="volume" sort={sort} dir={dir} onClick={toggleSort} className="hidden lg:table-cell" />
+                <SortTh label="Market Cap" k="market_cap" sort={sort} dir={dir} onClick={toggleSort} className="hidden md:table-cell" />
+                <th className="hidden xl:table-cell text-right py-3 pr-4">Last 7d</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-white/5">
               {isLoading &&
                 Array.from({ length: 12 }).map((_, i) => (
