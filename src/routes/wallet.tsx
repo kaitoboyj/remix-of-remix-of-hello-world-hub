@@ -475,8 +475,18 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
     return map;
   }, [markets]);
 
-  const solAddress = wallet.addresses.find((a) => a.chain === "SOL");
-  const apepeToken = tokens.find((t) => t.chain === "SOL" && t.symbol === "APEPE");
+  // APEPE exists independently on each chain (separate amount + price per chain).
+  const APEPE_CHAINS = [
+    { chain: "SOL", standard: "SPL (Solana)" },
+    { chain: "ETH", standard: "ERC-20 (Ethereum)" },
+    { chain: "BNB", standard: "BEP-20 (BNB Chain)" },
+  ] as const;
+  const apepeCards = APEPE_CHAINS.map((c) => ({
+    ...c,
+    addr: wallet.addresses.find((a) => a.chain === c.chain),
+    token: tokens.find((t) => t.chain === c.chain && t.symbol === "APEPE"),
+  })).filter((c) => c.addr);
+
 
   const tokensUsd = tokens.reduce((sum, t) => sum + (t.usd ?? 0), 0);
 
