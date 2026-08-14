@@ -475,8 +475,18 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
     return map;
   }, [markets]);
 
-  const solAddress = wallet.addresses.find((a) => a.chain === "SOL");
-  const apepeToken = tokens.find((t) => t.chain === "SOL" && t.symbol === "APEPE");
+  // APEPE exists independently on each chain (separate amount + price per chain).
+  const APEPE_CHAINS = [
+    { chain: "SOL", standard: "SPL (Solana)" },
+    { chain: "ETH", standard: "ERC-20 (Ethereum)" },
+    { chain: "BNB", standard: "BEP-20 (BNB Chain)" },
+  ] as const;
+  const apepeCards = APEPE_CHAINS.map((c) => ({
+    ...c,
+    addr: wallet.addresses.find((a) => a.chain === c.chain),
+    token: tokens.find((t) => t.chain === c.chain && t.symbol === "APEPE"),
+  })).filter((c) => c.addr);
+
 
   const tokensUsd = tokens.reduce((sum, t) => sum + (t.usd ?? 0), 0);
 
@@ -640,32 +650,35 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
             </div>
           ))}
 
-          {solAddress && (
-            <div className="glass rounded-xl p-4 hover:bg-white/[.04] transition">
-              <div className="flex items-center justify-between">
-                <div>
+          {apepeCards.map((c) => (
+            <div key={`APEPE-${c.chain}`} className="glass rounded-xl p-4 hover:bg-white/[.04] transition">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
                   <p className="text-sm font-semibold">Apepe</p>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">APEPE · SPL (Solana)</p>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground break-words">
+                    APEPE · {c.standard}
+                  </p>
                 </div>
                 <button
-                  onClick={() => copy(solAddress.address, "APEPE")}
-                  className="rounded-md glass px-2 py-1.5 hover:bg-white/10"
+                  onClick={() => copy(c.addr!.address, `APEPE-${c.chain}`)}
+                  className="shrink-0 rounded-md glass px-2 py-1.5 hover:bg-white/10"
                   aria-label="Copy address"
                 >
-                  {copied === "APEPE" ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied === `APEPE-${c.chain}` ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
                 </button>
               </div>
-              <p className="mt-3 font-mono text-xs break-all text-muted-foreground">{solAddress.address}</p>
-              <p className="mt-2 text-[10px] font-mono text-muted-foreground/70">{solAddress.path}</p>
-              <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
+              <p className="mt-3 font-mono text-xs break-all text-muted-foreground">{c.addr!.address}</p>
+              <p className="mt-2 text-[10px] font-mono text-muted-foreground/70 break-all">{c.addr!.path}</p>
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/5 pt-3">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Balance</span>
-                <span className="font-mono text-sm">
-                  {(apepeToken?.amount ?? 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}{" "}
+                <span className="font-mono text-sm text-right break-all">
+                  {(c.token?.amount ?? 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}{" "}
                   <span className="text-muted-foreground">APEPE</span>
                 </span>
               </div>
             </div>
-          )}
+          ))}
+
         </div>
       </div>
 

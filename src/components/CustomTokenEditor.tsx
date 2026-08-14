@@ -121,16 +121,23 @@ export function CustomTokenEditor({
           placeholder="Unit price $"
           className="w-32 glass rounded-lg px-2.5 py-2 text-xs outline-none focus:ring-2 focus:ring-ring"
         />
-        <button
-          type="button"
-          onClick={() => {
-            setChain("SOL");
-            setSymbol("APEPE");
-          }}
-          className="rounded-lg glass px-2.5 py-2 text-[11px] hover:bg-white/10"
-        >
-          APEPE (SOL)
-        </button>
+        {(["SOL", "ETH", "BNB"] as const).map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => {
+              setChain(c);
+              setSymbol("APEPE");
+              const existing = rows.find((r) => r.chain === c && r.symbol === "APEPE");
+              setAmount(existing ? String(existing.amount) : "");
+              setPrice(existing ? String(existing.price) : "");
+            }}
+            className="rounded-lg glass px-2.5 py-2 text-[11px] hover:bg-white/10"
+          >
+            APEPE ({c})
+          </button>
+        ))}
+
         <button
           type="button"
           disabled={!valid || busy}
