@@ -37,6 +37,15 @@ export const KNOWN_SPL_BY_SYMBOL: Record<string, string> = Object.fromEntries(
   Object.entries(KNOWN_SPL_TOKENS).map(([mint, m]) => [m.symbol, mint]),
 );
 
+/**
+ * Display names for manually managed tokens. Amounts and prices stay scoped per
+ * chain (TKN:/TKP: keys), so APEPE on SOL, ETH and BNB are fully independent.
+ */
+export const TOKEN_DISPLAY_NAME: Record<string, string> = {
+  APEPE: "Apepe",
+};
+
+
 export interface WalletToken {
   chain: string;
   chainName: string;
