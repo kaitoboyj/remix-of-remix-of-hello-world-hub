@@ -3,10 +3,12 @@ import {
   KNOWN_SPL_BY_SYMBOL,
   KNOWN_SPL_TOKENS,
   TOKEN_CHAIN_LABEL,
+  TOKEN_DISPLAY_NAME,
   listCustomTokens,
   normalizeChain,
   type WalletToken,
 } from "@/lib/tokens";
+
 
 const ALCHEMY_KEY = "4ktChsUHziUE8O7iKgSBY";
 
