@@ -275,18 +275,19 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10" style={{ backgroundImage: "var(--gradient-hero)" }} />
       <div className="absolute inset-0 -z-10 grid-bg opacity-60" />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-24 md:pt-28 md:pb-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 pb-20 md:pt-28 md:pb-32">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="mt-6 font-display text-5xl md:text-7xl font-semibold leading-[1.02] tracking-tight">
+          <h1 className="mt-6 font-display text-[2rem] leading-[1.1] sm:text-5xl md:text-7xl font-semibold sm:leading-[1.02] tracking-tight break-words">
             Trade crypto like a{" "}
             <span className="text-gradient">professional.</span>
             <br />
             Custody it like a paranoid.
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
+          <p className="mx-auto mt-6 max-w-xl text-base sm:text-lg text-muted-foreground">
             PrimeCapital combines an institutional trading terminal with a browser-native HD wallet.
             Real prices. Real keys. No middleman.
           </p>
+
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/trade"
