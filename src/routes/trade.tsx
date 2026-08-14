@@ -99,7 +99,7 @@ function TradePage() {
                 </div>
               </div>
               {coin && (
-                <div className="flex items-center gap-6 text-sm">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
                   <Stat label="Last" value={formatUSD(coin.current_price)} />
                   <Stat
                     label="24h %"
