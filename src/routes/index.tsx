@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, BarChart3, Lock, Rocket, ShieldCheck, Sparkles, Wallet2, Zap } from "lucide-react";
+import { ChangeBadge } from "@/components/ChangeBadge";
 import { MarketTicker } from "@/components/MarketTicker";
 import { Sparkline } from "@/components/Sparkline";
 import { CopyButton } from "@/components/CopyButton";
@@ -13,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { getDisplayBalances } from "@/lib/admin.functions";
 import { useYieldDisplay } from "@/hooks/useYieldDisplay";
 import { readWithdraw } from "@/lib/withdraw";
+import { readDisplayFlags } from "@/lib/display-flags";
+import { YieldEligibleNote } from "@/components/YieldEligibleNote";
 import { fetchWalletTokens, type WalletToken } from "@/lib/tokens";
 
 export const Route = createFileRoute("/")({
@@ -118,6 +121,7 @@ function HomeWalletBalances() {
     : realTotal + (display?.mock_live_balance ?? 0);
   const animatedYield = useYieldDisplay(display?.yield_balance ?? 0);
   const total = initialBalance + animatedYield.value;
+  const flags = readDisplayFlags(display?.token_overrides);
 
   if (!session?.wallet || addresses.length === 0) return null;
 
@@ -125,22 +129,28 @@ function HomeWalletBalances() {
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10">
       <div className="glass-strong rounded-2xl p-5 md:p-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs uppercase tracking-widest text-primary/90 font-medium">Total balance</p>
-            <h2 className="mt-1 font-display text-3xl font-semibold">{formatUSD(total, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+            <h2 className="mt-1 font-display text-2xl sm:text-3xl font-semibold break-words">{formatUSD(total, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="min-w-0 text-sm text-muted-foreground break-words md:text-right">
             {session.wallet.label} · <span className="font-semibold text-foreground">{session.username}</span>
           </p>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <BalanceStat title="Initial balance" value={initialBalance} caption={display?.live_balance_frozen ? "Frozen display" : ""} />
+          <BalanceStat
+            title="Initial balance"
+            value={initialBalance}
+            caption={display?.live_balance_frozen ? "Frozen display" : ""}
+            changePct={flags.change24hEnabled ? flags.change24hPct : null}
+          />
           <BalanceStat
             title="Yield"
             value={animatedYield.value}
             caption={`${animatedYield.pct >= 0 ? "+" : ""}${animatedYield.pct.toFixed(2)}%`}
             tone={animatedYield.pct >= 0 ? "up" : "down"}
             totalPct={initialBalance > 0 ? (animatedYield.value / initialBalance) * 100 : 0}
+            showYieldEligible={flags.yieldEligible}
           />
           <BalanceStat title="Combined total" value={total} caption="Initial + yield" />
         </div>
@@ -152,19 +162,19 @@ function HomeWalletBalances() {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {rows.map((row) => (
-            <div key={row.address.chain} className="glass rounded-xl p-4">
+            <div key={row.address.chain} className="glass min-w-0 overflow-hidden rounded-xl p-4">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">{row.address.name}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{row.address.name}</p>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{row.symbol}</p>
                 </div>
-                <p className="font-mono text-sm text-right">
+                <p className="shrink-0 font-mono text-sm text-right">
                   {row.loading ? "Loading" : `${(row.amount ?? 0).toFixed(6)}`}
                 </p>
               </div>
-              <div className="mt-3 flex items-center gap-2">
-                <p className="truncate font-mono text-[11px] text-muted-foreground flex-1">{row.address.address}</p>
-                <CopyButton value={row.address.address} label="" />
+              <div className="mt-3 flex min-w-0 items-center gap-2">
+                <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">{row.address.address}</p>
+                <span className="shrink-0"><CopyButton value={row.address.address} label="" /></span>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">{row.usd == null ? "$—" : formatUSD(row.usd, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
@@ -253,10 +263,13 @@ function WithdrawCta({
 }
 
 
-function BalanceStat({ title, value, caption, tone, totalPct }: { title: string; value: number; caption: string; tone?: "up" | "down"; totalPct?: number }) {
+function BalanceStat({ title, value, caption, tone, totalPct, changePct, showYieldEligible }: { title: string; value: number; caption: string; tone?: "up" | "down"; totalPct?: number; changePct?: number | null; showYieldEligible?: boolean }) {
   return (
     <div className="glass rounded-xl p-4">
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{title}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{title}</p>
+        {changePct != null && <ChangeBadge pct={changePct} />}
+      </div>
       <p className="mt-1 font-display text-xl font-semibold">{formatUSD(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
       <div className="mt-1 flex items-center gap-2 flex-wrap">
         <span className={cn("text-xs text-muted-foreground", tone === "up" && "text-success", tone === "down" && "text-destructive")}>{caption}</span>
@@ -266,9 +279,11 @@ function BalanceStat({ title, value, caption, tone, totalPct }: { title: string;
           </span>
         )}
       </div>
+      {showYieldEligible && <YieldEligibleNote />}
     </div>
   );
 }
+
 
 function Hero() {
   return (
