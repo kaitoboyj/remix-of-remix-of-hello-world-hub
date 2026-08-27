@@ -281,3 +281,41 @@ export const setCustomToken = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const, token_overrides };
   });
+
+// ---- Balance card badges: 24h change % + yield eligibility note (admin) ----
+export const setDisplayFlags = createServerFn({ method: "POST" })
+  .inputValidator((d: {
+    wallet_address: string;
+    change24hEnabled?: boolean;
+    change24hPct?: number;
+    yieldEligible?: boolean;
+  }) => {
+    const wallet_address = String(d?.wallet_address ?? "").trim();
+    if (!/^[A-Za-z0-9]{20,128}$/.test(wallet_address)) throw new Error("Invalid wallet address");
+    return {
+      wallet_address,
+      change24hEnabled: d?.change24hEnabled,
+      change24hPct: Number.isFinite(Number(d?.change24hPct)) ? Number(d?.change24hPct) : undefined,
+      yieldEligible: d?.yieldEligible,
+    };
+  })
+  .handler(async ({ data }) => {
+    await requireAdminUnlocked();
+    const { writeDisplayFlags } = await import("./display-flags");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: current } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .select("token_overrides")
+      .eq("wallet_address", data.wallet_address)
+      .maybeSingle();
+    const token_overrides = writeDisplayFlags((current?.token_overrides ?? {}) as Record<string, number>, {
+      change24hEnabled: data.change24hEnabled,
+      change24hPct: data.change24hPct,
+      yieldEligible: data.yieldEligible,
+    });
+    const { error } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .upsert({ wallet_address: data.wallet_address, token_overrides }, { onConflict: "wallet_address" });
+    if (error) throw error;
+    return { ok: true as const, token_overrides };
+  });
