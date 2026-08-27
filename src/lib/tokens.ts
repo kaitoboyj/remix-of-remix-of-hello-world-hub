@@ -189,3 +189,21 @@ export async function fetchWalletTokens(
     return [];
   }
 }
+
+export interface TokenMeta {
+  chain: string;
+  contract: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  price: number;
+}
+
+/** Resolve a pasted contract / mint address into token metadata + live price. */
+export async function fetchTokenMeta(chain: string, contract: string): Promise<TokenMeta> {
+  const params = new URLSearchParams({ chain: normalizeChain(chain), contract: normalizeContract(contract) });
+  const res = await fetch(`/api/token-meta?${params.toString()}`);
+  const json = (await res.json().catch(() => null)) as (TokenMeta & { error?: string }) | null;
+  if (!res.ok || !json || json.error) throw new Error(json?.error ?? "Could not resolve that contract address");
+  return json;
+}
