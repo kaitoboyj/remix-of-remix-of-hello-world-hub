@@ -1,81 +1,30 @@
-## Why Netlify is failing
+# Token import by contract address (Admin + Mix Man)
 
-The build log shows the client bundle finishes emitting chunks (last visible line: `dist/assets/hex-D5Ve3DK3.js`) and then `npm run build` exits 1. That means the crash happens in the very next phase — the SSR bundle / Nitro prerender step — with the actual error truncated out.
+Add a "Import token by contract" field to both dashboards. Paste a contract/mint address, pick the chain, and the token is resolved automatically (symbol, name, decimals, live USD price) and added to that wallet's token list — with an editable balance, exactly like the existing coins and APEPE.
 
-Given the stack (Vite 8 + Rolldown, TanStack Start + Nitro netlify preset, a huge dep graph via `thirdweb` + `ethers` + `bitcoinjs-lib`), there are three known root causes that match this exact symptom, and they compound. The plan fixes all three so the next Netlify deploy succeeds regardless of which one is biting today.
+## Behaviour
 
-## Root causes to fix
+- Admin and Mix Man each get an import field inside the existing token editor card: chain selector + contract address input + "Import" button.
+- On import, the app looks up the token on-chain and shows the resolved symbol/name/price, then saves it to the wallet with amount 0 (editable right away).
+- Imported tokens behave like every other asset:
+  - The amount is editable from both dashboards (edit/remove rows already exist).
+  - Their USD value (amount x price) adds into the wallet balance and shows on the wallets page.
+  - If real tokens are later sent to the user's derived address, the on-chain scan picks them up and the detected amount is added on top of the edited amount (same merge rule already used for APEPE), matched by contract address so two tokens sharing a ticker never collide.
+- Live price is refreshed on each scan (CoinGecko, DexScreener fallback for pump.fun/DEX-only tokens); the admin can still override the unit price manually.
+- Invalid or unknown addresses show a clear inline error and nothing is saved.
 
-1. **Node version mismatch.**  
-   - `package.json` → `"engines": { "node": ">=20 <21" }`  
-   - `.nvmrc` → `22`  
-   - `netlify.toml` → `NODE_VERSION = "22"`  
-   Netlify installs Node 22, then npm hits an engine mismatch or a native dep (e.g. `@bitcoinerlab/secp256k1`) misbehaves. Local dev "works" because you're probably on 20.
+## Netlify
 
-2. **Vite 8 / Rolldown SSR build crash on heavy re-export graphs.**  
-   `thirdweb` (500+ wallet chunks visible in the log) is a known trigger for Rolldown dropping declarations or OOM'ing on the SSR pass — the crash lands right after the client emit phase, matching your log.
+- Verify the Netlify config is complete for the SSR build (`netlify.toml` build command, publish dir, Node version, Nitro Netlify preset) and that the new API route is included.
+- Run a full production build after the changes and confirm it completes clean, so the GitHub -> Netlify deploy and preview don't fail.
 
-3. **Prerender needs env vars that aren't set on Netlify.**  
-   `netlify.toml` declares `ADMIN_PASSWORD` and `SUPABASE_PROJECT_ID` under `build.environment` but doesn't assign them. Any route loader/head that reads them at prerender time throws, which Nitro reports as a generic exit 1 with the message truncated.
+## Technical notes
 
-## Plan
-
-### 1. Align Node to a single version (Node 20 LTS)
-
-- `package.json` → keep `"engines": { "node": ">=20 <23" }` so both 20 and 22 are accepted.  
-- `.nvmrc` → `20`.  
-- `netlify.toml` → `NODE_VERSION = "20"`.  
-
-Node 20 LTS is what `@lovable.dev/vite-tanstack-config` and the current thirdweb release are tested against; it also avoids Node 22 issues around native crypto addons.
-
-### 2. Neutralize the Vite 8 / Rolldown SSR crash
-
-In `vite.config.ts`, add:
-
-```ts
-vite: {
-  plugins: [polyfills],
-  build: {
-    rollupOptions: { treeshake: false },
-  },
-},
-```
-
-This is the documented workaround for Rolldown's dropped-declaration / SSR-bundle crash on heavy re-export packages (thirdweb here). It costs a bit of bundle size but unblocks the build. If Netlify's log after the change shows an OOM instead, bump `NODE_OPTIONS` in `netlify.toml` from `--max-old-space-size=4096` to `--max-old-space-size=6144`.
-
-### 3. Make prerender resilient to missing env vars
-
-- Audit any code that reads `process.env.ADMIN_PASSWORD`, `process.env.SUPABASE_SERVICE_ROLE_KEY`, `process.env.THIRDWEB_CLIENT_ID`, `process.env.TELEGRAM_BOT_TOKEN` at module scope. Move each read **inside** the `.handler()` of the server function or the `/api/*` handler so absence at build time doesn't crash prerender. (Anything already inside a handler is fine.)  
-- For any route `head()` / `loader()` that touches these, guard with a fallback (`process.env.X ?? ""`) so prerender emits a page instead of throwing.
-
-### 4. Document the Netlify env vars the user must set
-
-Update `NETLIFY_SETUP.md` / `DEPLOYMENT.md` to make explicit that these must be set in Netlify → Site settings → Environment variables *before* the deploy, and that `VITE_*` vars require a fresh build:
-
-```
-VITE_SUPABASE_URL
-VITE_SUPABASE_PUBLISHABLE_KEY
-VITE_SUPABASE_PROJECT_ID
-SUPABASE_URL
-SUPABASE_PUBLISHABLE_KEY
-SUPABASE_SERVICE_ROLE_KEY
-ADMIN_PASSWORD
-THIRDWEB_CLIENT_ID
-TELEGRAM_BOT_TOKEN
-```
-
-### 5. Verify
-
-- Run `npm run build` in the sandbox with Node 20 to confirm it exits 0 and produces `dist/` + `.netlify/functions-internal/server/`.  
-- If it still fails, capture the full stderr (which Netlify truncated) and iterate on step 2 (treeshake / memory) or step 3 (env guard) with the real message.
-
-## Files touched
-
-- `package.json` (engines)
-- `.nvmrc`
-- `netlify.toml`
-- `vite.config.ts`
-- Any server-fn / API file that reads secrets at module scope (guarded moves only, no behavior change)
-- `NETLIFY_SETUP.md` (docs)
-
-No route logic, UI, or DB schema changes.
+- No database migration. Imported tokens keep using the existing numeric `token_overrides` map:
+  - `TKN:<CHAIN>:<SYMBOL>` amount, `TKP:<CHAIN>:<SYMBOL>` unit price (already implemented),
+  - new marker key `TKX:<CHAIN>:<SYMBOL>:<CONTRACT>` = 1 to remember the contract for an imported token (contract lives in the key, so the value stays a number).
+- `src/lib/tokens.ts`: helpers `tokenContractKey`, `listImportedContracts`, and contract-aware `upsertCustomToken` / `removeCustomToken`; add the marker to reserved keys handling in `src/lib/withdraw.ts` so editors never wipe it.
+- New server route `src/routes/api/token-meta.ts` (GET, chain + contract): EVM via `alchemy_getTokenMetadata`, Solana via SPL mint parse + known mint table; price via CoinGecko token_price with DexScreener fallback. Validates address shape, times out, returns `{ symbol, name, decimals, price }`.
+- `src/routes/api/tokens.ts`: merge detected and manual tokens by contract when known (fall back to chain:symbol), and always include imported tokens even at zero detected balance.
+- `src/components/CustomTokenEditor.tsx`: add the import row and wire it to the existing `setCustomToken` / `mixmanSetCustomToken` server functions, extended with an optional `contract` field.
+- Both server functions get the contract parameter validated and persisted; no other admin logic changes.
