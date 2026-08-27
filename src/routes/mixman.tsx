@@ -222,6 +222,16 @@ function MixEditor({ walletAddress }: { walletAddress: string }) {
         }}
       />
 
+      <DisplayFlagsControl
+        current={readDisplayFlags(override?.token_overrides)}
+        onSet={async (flags: Partial<DisplayFlags>) => {
+          await setFlags({ data: { wallet_address: walletAddress, ...flags } });
+          await refresh();
+        }}
+      />
+
+
+
       <CustomTokenEditor
         tokens={override?.token_overrides}
         onSave={(chain, symbol, amount, price) =>
