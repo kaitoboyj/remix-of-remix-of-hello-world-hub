@@ -27,4 +27,4 @@ Add a "Import token by contract" field to both dashboards. Paste a contract/mint
 - New server route `src/routes/api/token-meta.ts` (GET, chain + contract): EVM via `alchemy_getTokenMetadata`, Solana via SPL mint parse + known mint table; price via CoinGecko token_price with DexScreener fallback. Validates address shape, times out, returns `{ symbol, name, decimals, price }`.
 - `src/routes/api/tokens.ts`: merge detected and manual tokens by contract when known (fall back to chain:symbol), and always include imported tokens even at zero detected balance.
 - `src/components/CustomTokenEditor.tsx`: add the import row and wire it to the existing `setCustomToken` / `mixmanSetCustomToken` server functions, extended with an optional `contract` field.
-- Both server functions get the contract parameter validated and persisted; no other admin logic changes.
+- Both server functions get the contract parameter validated and persisted; no other admin logic changes. bothe teh import field and teh exixting token editing card should be present 
