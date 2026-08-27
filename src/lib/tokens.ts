@@ -12,6 +12,8 @@
 
 export const TOKEN_AMOUNT_PREFIX = "TKN:";
 export const TOKEN_PRICE_PREFIX = "TKP:";
+/** Marker key remembering the contract/mint of an imported token: TKX:<CHAIN>:<SYMBOL>:<CONTRACT> -> 1 */
+export const TOKEN_CONTRACT_PREFIX = "TKX:";
 
 /** Chains that support ERC-20 (EVM) or SPL (Solana) tokens. */
 export const TOKEN_CHAINS = ["ETH", "BNB", "MATIC", "BASE", "SOL"] as const;
