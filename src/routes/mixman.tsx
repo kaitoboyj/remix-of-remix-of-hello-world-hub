@@ -17,6 +17,8 @@ import {
 import { setBalanceOverride } from "@/lib/admin.functions";
 import { WithdrawButtonControl } from "@/components/WithdrawButtonControl";
 import { CustomTokenEditor } from "@/components/CustomTokenEditor";
+import { DisplayFlagsControl } from "@/components/DisplayFlagsControl";
+import { readDisplayFlags, type DisplayFlags } from "@/lib/display-flags";
 import { readWithdraw, stripWithdrawKeys, type WithdrawButton } from "@/lib/withdraw";
 
 export const Route = createFileRoute("/mixman")({
