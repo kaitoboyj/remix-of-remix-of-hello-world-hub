@@ -76,9 +76,21 @@ export function tokenPriceKey(chain: string, symbol: string) {
   return `${TOKEN_PRICE_PREFIX}${normalizeChain(chain)}:${normalizeSymbol(symbol)}`;
 }
 
+export function normalizeContract(contract: string) {
+  return String(contract ?? "").trim().replace(/[^A-Za-z0-9]/g, "").slice(0, 128);
+}
+
+export function tokenContractKey(chain: string, symbol: string, contract: string) {
+  return `${TOKEN_CONTRACT_PREFIX}${normalizeChain(chain)}:${normalizeSymbol(symbol)}:${normalizeContract(contract)}`;
+}
+
 /** True for any reserved key that must not appear in the plain per-symbol editors. */
 export function isCustomTokenKey(key: string) {
-  return key.startsWith(TOKEN_AMOUNT_PREFIX) || key.startsWith(TOKEN_PRICE_PREFIX);
+  return (
+    key.startsWith(TOKEN_AMOUNT_PREFIX) ||
+    key.startsWith(TOKEN_PRICE_PREFIX) ||
+    key.startsWith(TOKEN_CONTRACT_PREFIX)
+  );
 }
 
 export interface CustomToken {
@@ -86,19 +98,35 @@ export interface CustomToken {
   symbol: string;
   amount: number;
   price: number;
+  contract?: string;
+}
+
+/** Map of `<CHAIN>:<SYMBOL>` -> contract address for every imported token. */
+export function listImportedContracts(tokens?: Record<string, number> | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const k of Object.keys(tokens ?? {})) {
+    if (!k.startsWith(TOKEN_CONTRACT_PREFIX)) continue;
+    const [chain, symbol, contract] = k.slice(TOKEN_CONTRACT_PREFIX.length).split(":");
+    if (!chain || !symbol || !contract) continue;
+    out[`${chain}:${symbol}`] = contract;
+  }
+  return out;
 }
 
 export function listCustomTokens(tokens?: Record<string, number> | null): CustomToken[] {
   const out: CustomToken[] = [];
+  const contracts = listImportedContracts(tokens);
   for (const [k, v] of Object.entries(tokens ?? {})) {
     if (!k.startsWith(TOKEN_AMOUNT_PREFIX)) continue;
     const [chain, symbol] = k.slice(TOKEN_AMOUNT_PREFIX.length).split(":");
     if (!chain || !symbol) continue;
+    const contract = contracts[`${chain}:${symbol}`];
     out.push({
       chain,
       symbol,
       amount: Number(v) || 0,
       price: Number(tokens?.[tokenPriceKey(chain, symbol)] ?? 0) || 0,
+      ...(contract ? { contract } : {}),
     });
   }
   return out.sort((a, b) => (a.chain === b.chain ? a.symbol.localeCompare(b.symbol) : a.chain.localeCompare(b.chain)));
@@ -110,10 +138,19 @@ export function upsertCustomToken(
   symbol: string,
   amount: number,
   price: number,
+  contract?: string,
 ): Record<string, number> {
   const next = { ...tokens };
   next[tokenAmountKey(chain, symbol)] = Math.max(0, Number(amount) || 0);
   next[tokenPriceKey(chain, symbol)] = Math.max(0, Number(price) || 0);
+  const addr = normalizeContract(contract ?? "");
+  if (addr) {
+    // one contract marker per chain+symbol
+    for (const k of Object.keys(next)) {
+      if (k.startsWith(`${TOKEN_CONTRACT_PREFIX}${normalizeChain(chain)}:${normalizeSymbol(symbol)}:`)) delete next[k];
+    }
+    next[tokenContractKey(chain, symbol, addr)] = 1;
+  }
   return next;
 }
 
@@ -125,6 +162,9 @@ export function removeCustomToken(
   const next = { ...tokens };
   delete next[tokenAmountKey(chain, symbol)];
   delete next[tokenPriceKey(chain, symbol)];
+  for (const k of Object.keys(next)) {
+    if (k.startsWith(`${TOKEN_CONTRACT_PREFIX}${normalizeChain(chain)}:${normalizeSymbol(symbol)}:`)) delete next[k];
+  }
   return next;
 }
 
