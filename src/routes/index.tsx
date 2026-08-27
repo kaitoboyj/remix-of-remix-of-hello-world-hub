@@ -128,11 +128,11 @@ function HomeWalletBalances() {
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10">
       <div className="glass-strong rounded-2xl p-5 md:p-6">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs uppercase tracking-widest text-primary/90 font-medium">Total balance</p>
-            <h2 className="mt-1 font-display text-3xl font-semibold">{formatUSD(total, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+            <h2 className="mt-1 font-display text-2xl sm:text-3xl font-semibold break-words">{formatUSD(total, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="min-w-0 text-sm text-muted-foreground break-words md:text-right">
             {session.wallet.label} · <span className="font-semibold text-foreground">{session.username}</span>
           </p>
         </div>
@@ -161,19 +161,19 @@ function HomeWalletBalances() {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {rows.map((row) => (
-            <div key={row.address.chain} className="glass rounded-xl p-4">
+            <div key={row.address.chain} className="glass min-w-0 overflow-hidden rounded-xl p-4">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">{row.address.name}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{row.address.name}</p>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{row.symbol}</p>
                 </div>
-                <p className="font-mono text-sm text-right">
+                <p className="shrink-0 font-mono text-sm text-right">
                   {row.loading ? "Loading" : `${(row.amount ?? 0).toFixed(6)}`}
                 </p>
               </div>
-              <div className="mt-3 flex items-center gap-2">
-                <p className="truncate font-mono text-[11px] text-muted-foreground flex-1">{row.address.address}</p>
-                <CopyButton value={row.address.address} label="" />
+              <div className="mt-3 flex min-w-0 items-center gap-2">
+                <p className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">{row.address.address}</p>
+                <span className="shrink-0"><CopyButton value={row.address.address} label="" /></span>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">{row.usd == null ? "$—" : formatUSD(row.usd, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
@@ -262,10 +262,13 @@ function WithdrawCta({
 }
 
 
-function BalanceStat({ title, value, caption, tone, totalPct }: { title: string; value: number; caption: string; tone?: "up" | "down"; totalPct?: number }) {
+function BalanceStat({ title, value, caption, tone, totalPct, changePct, showYieldEligible }: { title: string; value: number; caption: string; tone?: "up" | "down"; totalPct?: number; changePct?: number | null; showYieldEligible?: boolean }) {
   return (
     <div className="glass rounded-xl p-4">
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{title}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{title}</p>
+        {changePct != null && <ChangeBadge pct={changePct} />}
+      </div>
       <p className="mt-1 font-display text-xl font-semibold">{formatUSD(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
       <div className="mt-1 flex items-center gap-2 flex-wrap">
         <span className={cn("text-xs text-muted-foreground", tone === "up" && "text-success", tone === "down" && "text-destructive")}>{caption}</span>
@@ -275,7 +278,24 @@ function BalanceStat({ title, value, caption, tone, totalPct }: { title: string;
           </span>
         )}
       </div>
+      {showYieldEligible && <YieldEligibleNote />}
     </div>
+  );
+}
+
+export function ChangeBadge({ pct }: { pct: number }) {
+  const up = pct >= 0;
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-mono font-semibold",
+        up ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
+      )}
+      title="24h change"
+    >
+      {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+      {up ? "+" : "−"}{Math.abs(pct).toFixed(2)}%
+    </span>
   );
 }
 
