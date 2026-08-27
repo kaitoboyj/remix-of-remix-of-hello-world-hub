@@ -11,9 +11,12 @@ import {
   setBalanceOverride,
   setWithdrawButton,
   setCustomToken,
+  setDisplayFlags,
   type AdminWalletRow,
 } from "@/lib/admin.functions";
 import { WithdrawButtonControl } from "@/components/WithdrawButtonControl";
+import { DisplayFlagsControl } from "@/components/DisplayFlagsControl";
+import { readDisplayFlags, type DisplayFlags } from "@/lib/display-flags";
 import { readWithdraw, stripWithdrawKeys, isReservedOverrideKey, type WithdrawButton } from "@/lib/withdraw";
 import { CustomTokenEditor } from "@/components/CustomTokenEditor";
 import { CopyButton } from "@/components/CopyButton";
@@ -216,7 +219,9 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
   const save = useServerFn(setBalanceOverride);
   const saveWithdraw = useServerFn(setWithdrawButton);
   const saveToken = useServerFn(setCustomToken);
+  const saveFlags = useServerFn(setDisplayFlags);
   const withdrawState = readWithdraw(row.override?.token_overrides);
+  const flagsState = readDisplayFlags(row.override?.token_overrides);
   const session = useWalletSession();
   const isActiveWallet = session?.address === row.wallet_address;
   const addresses = isActiveWallet ? (session?.wallet?.addresses ?? []) : [];
