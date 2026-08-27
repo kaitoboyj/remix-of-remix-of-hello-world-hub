@@ -498,6 +498,17 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
         />
       </div>
 
+      <div className="mt-4">
+        <DisplayFlagsControl
+          current={flagsState}
+          onSet={async (flags: Partial<DisplayFlags>) => {
+            await saveFlags({ data: { wallet_address: row.wallet_address, ...flags } });
+            onSaved();
+          }}
+        />
+      </div>
+
+
       <div className="mt-3 flex items-center justify-end gap-3">
         {err && <p className="text-xs text-destructive">{err}</p>}
         {savedAt && !err && <p className="text-xs text-success">Saved</p>}
