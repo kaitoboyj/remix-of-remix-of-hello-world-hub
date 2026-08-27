@@ -23,7 +23,7 @@ import { getDisplayBalances } from "@/lib/admin.functions";
 import { useYieldDisplay } from "@/hooks/useYieldDisplay";
 import { readDisplayFlags } from "@/lib/display-flags";
 import { YieldEligibleNote } from "@/components/YieldEligibleNote";
-import { ChangeBadge } from "@/routes/index";
+import { ChangeBadge } from "@/components/ChangeBadge";
 import { fetchWalletTokens, type WalletToken } from "@/lib/tokens";
 
 // NOTE: All wallet code is client-only. We dynamic-import to keep the SSR bundle clean.
