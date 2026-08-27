@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { getDisplayBalances } from "@/lib/admin.functions";
 import { useYieldDisplay } from "@/hooks/useYieldDisplay";
 import { readWithdraw } from "@/lib/withdraw";
+import { readDisplayFlags } from "@/lib/display-flags";
+import { YieldEligibleNote } from "@/components/YieldEligibleNote";
 import { fetchWalletTokens, type WalletToken } from "@/lib/tokens";
 
 export const Route = createFileRoute("/")({
@@ -118,6 +120,7 @@ function HomeWalletBalances() {
     : realTotal + (display?.mock_live_balance ?? 0);
   const animatedYield = useYieldDisplay(display?.yield_balance ?? 0);
   const total = initialBalance + animatedYield.value;
+  const flags = readDisplayFlags(display?.token_overrides);
 
   if (!session?.wallet || addresses.length === 0) return null;
 
