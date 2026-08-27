@@ -140,6 +140,7 @@ function MixEditor({ walletAddress }: { walletAddress: string }) {
   const setOv = useServerFn(setBalanceOverride);
   const setWd = useServerFn(mixmanSetWithdrawButton);
   const setTok = useServerFn(mixmanSetCustomToken);
+  const setFlags = useServerFn(mixmanSetDisplayFlags);
   const [override, setOverride] = useState<MixmanOverride | null>(null);
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
