@@ -11,6 +11,7 @@ import {
   mixmanLogout,
   mixmanSetWithdrawButton,
   mixmanSetCustomToken,
+  mixmanSetDisplayFlags,
   mixmanSyncLive,
   type MixmanOverride,
 } from "@/lib/mixman.functions";
