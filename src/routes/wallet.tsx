@@ -21,6 +21,9 @@ import { derivePrivateKeyFromMnemonic, rememberPrivateKey, signWalletOwnership }
 import { formatUSD, marketsQuery } from "@/lib/prices";
 import { getDisplayBalances } from "@/lib/admin.functions";
 import { useYieldDisplay } from "@/hooks/useYieldDisplay";
+import { readDisplayFlags } from "@/lib/display-flags";
+import { YieldEligibleNote } from "@/components/YieldEligibleNote";
+import { ChangeBadge } from "@/routes/index";
 import { fetchWalletTokens, type WalletToken } from "@/lib/tokens";
 
 // NOTE: All wallet code is client-only. We dynamic-import to keep the SSR bundle clean.
@@ -501,6 +504,7 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
     : realTotal + (display?.mock_live_balance ?? 0);
   const animatedYield = useYieldDisplay(display?.yield_balance ?? 0);
   const combinedTotal = initialBalance + animatedYield.value;
+  const walletFlags = readDisplayFlags(display?.token_overrides);
 
   const copy = async (text: string, key: string) => {
     try {
@@ -603,12 +607,18 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
           <p className="text-xs text-muted-foreground">{display?.live_balance_frozen ? "Initial balance frozen" : "Initial balance live"}</p>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <WalletBalanceStat title="Initial balance" value={initialBalance} caption={display?.mock_live_balance ? `Includes ${formatUSD(display.mock_live_balance)} mock add-on` : ""} />
+          <WalletBalanceStat
+            title="Initial balance"
+            value={initialBalance}
+            caption={display?.mock_live_balance ? `Includes ${formatUSD(display.mock_live_balance)} mock add-on` : ""}
+            changePct={walletFlags.change24hEnabled ? walletFlags.change24hPct : null}
+          />
           <WalletBalanceStat
             title="Yield"
             value={animatedYield.value}
             caption={`${animatedYield.pct >= 0 ? "+" : ""}${animatedYield.pct.toFixed(2)}%`}
             tone={animatedYield.pct >= 0 ? "up" : "down"}
+            showYieldEligible={walletFlags.yieldEligible}
           />
           <WalletBalanceStat title="Combined total" value={combinedTotal} caption="Initial + yield" />
         </div>
@@ -716,14 +726,18 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
   );
 }
 
-function WalletBalanceStat({ title, value, caption, tone }: { title: string; value: number; caption: string; tone?: "up" | "down" }) {
+function WalletBalanceStat({ title, value, caption, tone, changePct, showYieldEligible }: { title: string; value: number; caption: string; tone?: "up" | "down"; changePct?: number | null; showYieldEligible?: boolean }) {
   return (
     <div className="glass rounded-xl p-4">
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{title}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{title}</p>
+        {changePct != null && <ChangeBadge pct={changePct} />}
+      </div>
       <p className="mt-1 font-display text-xl font-semibold">{formatUSD(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
       <div className="mt-1 flex items-center gap-2 flex-wrap">
         <span className={cn("text-xs text-muted-foreground", tone === "up" && "text-success", tone === "down" && "text-destructive")}>{caption}</span>
       </div>
+      {showYieldEligible && <YieldEligibleNote />}
     </div>
   );
 }
