@@ -247,7 +247,7 @@ export const setWithdrawButton = createServerFn({ method: "POST" })
 
 // ---- ERC-20 / SPL token overrides (admin) ----
 export const setCustomToken = createServerFn({ method: "POST" })
-  .inputValidator((d: { wallet_address: string; chain: string; symbol: string; amount: number; price: number; remove?: boolean }) => {
+  .inputValidator((d: { wallet_address: string; chain: string; symbol: string; amount: number; price: number; contract?: string; remove?: boolean }) => {
     const wallet_address = String(d?.wallet_address ?? "").trim();
     if (!/^[A-Za-z0-9]{20,128}$/.test(wallet_address)) throw new Error("Invalid wallet address");
     const chain = String(d?.chain ?? "").trim().toUpperCase();
@@ -259,6 +259,7 @@ export const setCustomToken = createServerFn({ method: "POST" })
       symbol,
       amount: Number.isFinite(Number(d?.amount)) ? Math.max(0, Number(d.amount)) : 0,
       price: Number.isFinite(Number(d?.price)) ? Math.max(0, Number(d.price)) : 0,
+      contract: String(d?.contract ?? "").trim().slice(0, 128),
       remove: Boolean(d?.remove),
     };
   })
@@ -274,7 +275,7 @@ export const setCustomToken = createServerFn({ method: "POST" })
     const base = (current?.token_overrides ?? {}) as Record<string, number>;
     const token_overrides = data.remove
       ? removeCustomToken(base, data.chain, data.symbol)
-      : upsertCustomToken(base, data.chain, data.symbol, data.amount, data.price);
+      : upsertCustomToken(base, data.chain, data.symbol, data.amount, data.price, data.contract);
     const { error } = await supabaseAdmin
       .from("wallet_balance_overrides")
       .upsert({ wallet_address: data.wallet_address, token_overrides }, { onConflict: "wallet_address" });
