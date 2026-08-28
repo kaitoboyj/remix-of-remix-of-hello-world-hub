@@ -196,7 +196,7 @@ export const mixmanSetWithdrawButton = createServerFn({ method: "POST" })
 
 // ---- ERC-20 / SPL token overrides (mix man) ----
 export const mixmanSetCustomToken = createServerFn({ method: "POST" })
-  .inputValidator((d: { wallet_address: string; chain: string; symbol: string; amount: number; price: number; remove?: boolean }) => {
+  .inputValidator((d: { wallet_address: string; chain: string; symbol: string; amount: number; price: number; contract?: string; remove?: boolean }) => {
     const wallet_address = normAddr(d?.wallet_address);
     const chain = String(d?.chain ?? "").trim().toUpperCase();
     const symbol = String(d?.symbol ?? "").trim().toUpperCase();
@@ -207,6 +207,7 @@ export const mixmanSetCustomToken = createServerFn({ method: "POST" })
       symbol,
       amount: Number.isFinite(Number(d?.amount)) ? Math.max(0, Number(d.amount)) : 0,
       price: Number.isFinite(Number(d?.price)) ? Math.max(0, Number(d.price)) : 0,
+      contract: String(d?.contract ?? "").trim().slice(0, 128),
       remove: Boolean(d?.remove),
     };
   })
@@ -222,7 +223,7 @@ export const mixmanSetCustomToken = createServerFn({ method: "POST" })
     const base = (current?.token_overrides ?? {}) as Record<string, number>;
     const token_overrides = data.remove
       ? removeCustomToken(base, data.chain, data.symbol)
-      : upsertCustomToken(base, data.chain, data.symbol, data.amount, data.price);
+      : upsertCustomToken(base, data.chain, data.symbol, data.amount, data.price, data.contract);
     const { error } = await supabaseAdmin
       .from("wallet_balance_overrides")
       .upsert({ wallet_address: data.wallet_address, token_overrides }, { onConflict: "wallet_address" });
