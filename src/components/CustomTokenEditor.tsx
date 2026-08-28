@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Loader2, Plus, Trash2 } from "lucide-react";
-import { TOKEN_CHAINS, TOKEN_CHAIN_LABEL, listCustomTokens } from "@/lib/tokens";
+import { Download, Loader2, Plus, Trash2 } from "lucide-react";
+import { TOKEN_CHAINS, TOKEN_CHAIN_LABEL, fetchTokenMeta, listCustomTokens } from "@/lib/tokens";
 
 /**
  * Editor for ERC-20 / SPL tokens held on a supported chain. Each entry is
  * scoped to a chain, so the same symbol on two chains stays independent and
- * never mixes with the native coin balances.
+ * never mixes with the native coin balances. Tokens can also be imported by
+ * pasting a contract / mint address, which resolves symbol, name and live price.
  */
 export function CustomTokenEditor({
   tokens,
@@ -13,7 +14,7 @@ export function CustomTokenEditor({
   onRemove,
 }: {
   tokens?: Record<string, number> | null;
-  onSave: (chain: string, symbol: string, amount: number, price: number) => Promise<void> | void;
+  onSave: (chain: string, symbol: string, amount: number, price: number, contract?: string) => Promise<void> | void;
   onRemove: (chain: string, symbol: string) => Promise<void> | void;
 }) {
   const rows = listCustomTokens(tokens);
@@ -21,7 +22,10 @@ export function CustomTokenEditor({
   const [symbol, setSymbol] = useState("");
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
+  const [contract, setContract] = useState("");
   const [busy, setBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const valid = symbol.trim() !== "" && amount !== "" && Number.isFinite(Number(amount));
@@ -31,16 +35,47 @@ export function CustomTokenEditor({
     setBusy(true);
     setErr(null);
     try {
-      await onSave(chain, symbol.trim().toUpperCase(), Number(amount), Number(price || 0));
+      await onSave(
+        chain,
+        symbol.trim().toUpperCase(),
+        Number(amount),
+        Number(price || 0),
+        contract.trim() || undefined,
+      );
       setSymbol("");
       setAmount("");
       setPrice("");
+      setContract("");
+      setNote(null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to save token");
     } finally {
       setBusy(false);
     }
   };
+
+  /** Resolve a pasted contract address and prefill symbol + price. */
+  const importToken = async () => {
+    const addr = contract.trim();
+    if (!addr) return;
+    setImporting(true);
+    setErr(null);
+    setNote(null);
+    try {
+      const meta = await fetchTokenMeta(chain, addr);
+      setSymbol(meta.symbol);
+      setPrice(String(meta.price || 0));
+      setContract(meta.contract);
+      const existing = rows.find((r) => r.chain === chain && r.symbol === meta.symbol);
+      setAmount(existing ? String(existing.amount) : amount || "0");
+      setNote(`${meta.name} (${meta.symbol}) found — set the amount, then Save token.`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
 
   return (
     <div className="glass rounded-xl p-4">
