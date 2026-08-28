@@ -234,9 +234,9 @@ function MixEditor({ walletAddress }: { walletAddress: string }) {
 
       <CustomTokenEditor
         tokens={override?.token_overrides}
-        onSave={(chain, symbol, amount, price) =>
+        onSave={(chain, symbol, amount, price, contract) =>
           run(
-            () => setTok({ data: { wallet_address: walletAddress, chain, symbol, amount, price } }),
+            () => setTok({ data: { wallet_address: walletAddress, chain, symbol, amount, price, contract } }),
             `${symbol} on ${chain} saved`,
           )
         }
