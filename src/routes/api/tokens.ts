@@ -234,11 +234,22 @@ export const Route = createFileRoute("/api/tokens")({
 
         const manual = await manualTokens(walletKey);
 
-        // Merge: manual entries add on top of detected ones with the same chain+symbol.
+        // Merge: manual entries add on top of detected ones. Imported tokens are
+        // matched by contract address first so an on-chain deposit of the same
+        // token adds up with the edited balance.
+        const mergeKey = (t: WalletToken) =>
+          t.contract ? `${t.chain}:${t.contract.toLowerCase()}` : `${t.chain}:${t.symbol}`;
         const merged = new Map<string, WalletToken>();
-        for (const t of detected.flat()) merged.set(`${t.chain}:${t.symbol}`, t);
+        const bySymbol = new Map<string, string>();
+        for (const t of detected.flat()) {
+          const key = mergeKey(t);
+          merged.set(key, t);
+          bySymbol.set(`${t.chain}:${t.symbol}`, key);
+        }
         for (const m of manual) {
-          const key = `${m.chain}:${m.symbol}`;
+          const key = merged.has(mergeKey(m))
+            ? mergeKey(m)
+            : (bySymbol.get(`${m.chain}:${m.symbol}`) ?? mergeKey(m));
           const existing = merged.get(key);
           if (existing) {
             const amount = existing.amount + m.amount;
