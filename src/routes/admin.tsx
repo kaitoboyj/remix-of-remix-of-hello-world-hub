@@ -476,8 +476,8 @@ function WalletRow({ row, onSaved }: { row: AdminWalletRow; onSaved: () => void 
       <div className="mt-4">
         <CustomTokenEditor
           tokens={row.override?.token_overrides}
-          onSave={async (chain, symbol, amount, price) => {
-            await saveToken({ data: { wallet_address: row.wallet_address, chain, symbol, amount, price } });
+          onSave={async (chain, symbol, amount, price, contract) => {
+            await saveToken({ data: { wallet_address: row.wallet_address, chain, symbol, amount, price, contract } });
             onSaved();
           }}
           onRemove={async (chain, symbol) => {
