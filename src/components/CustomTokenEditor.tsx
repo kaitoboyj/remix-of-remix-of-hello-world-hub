@@ -91,7 +91,7 @@ export function CustomTokenEditor({
       {rows.length > 0 && (
         <ul className="mt-3 space-y-1.5">
           {rows.map((t) => (
-            <li key={`${t.chain}:${t.symbol}`} className="flex items-center gap-2 rounded-lg bg-white/5 px-2.5 py-1.5 text-xs">
+            <li key={`${t.chain}:${t.symbol}`} className="flex flex-wrap items-center gap-2 rounded-lg bg-white/5 px-2.5 py-1.5 text-xs">
               <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] uppercase tracking-widest text-primary">
                 {TOKEN_CHAIN_LABEL[t.chain] ?? t.chain}
               </span>
@@ -99,6 +99,11 @@ export function CustomTokenEditor({
               <span className="text-muted-foreground">
                 {t.amount} @ ${t.price} = ${(t.amount * t.price).toLocaleString()}
               </span>
+              {t.contract && (
+                <span className="max-w-[10rem] truncate font-mono text-[10px] text-muted-foreground" title={t.contract}>
+                  {t.contract.slice(0, 6)}…{t.contract.slice(-4)}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -106,6 +111,7 @@ export function CustomTokenEditor({
                   setSymbol(t.symbol);
                   setAmount(String(t.amount));
                   setPrice(String(t.price));
+                  setContract(t.contract ?? "");
                 }}
                 className="ml-auto rounded-md glass px-2 py-1 text-[11px] hover:bg-white/10"
               >
@@ -123,6 +129,27 @@ export function CustomTokenEditor({
           ))}
         </ul>
       )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-2">
+        <span className="text-[11px] font-medium">Import by contract</span>
+        <input
+          value={contract}
+          onChange={(e) => setContract(e.target.value)}
+          placeholder="0x… or Solana mint"
+          className="min-w-0 flex-1 glass rounded-lg px-2.5 py-2 font-mono text-[11px] outline-none focus:ring-2 focus:ring-ring"
+        />
+        <button
+          type="button"
+          disabled={!contract.trim() || importing}
+          onClick={importToken}
+          className="inline-flex items-center gap-1 rounded-lg glass px-3 py-2 text-[11px] font-semibold hover:bg-white/10 disabled:opacity-40"
+        >
+          {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          Import
+        </button>
+      </div>
+      {note && <p className="mt-2 text-[11px] text-primary">{note}</p>}
+
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select
