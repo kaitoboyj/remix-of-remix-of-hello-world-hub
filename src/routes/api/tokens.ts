@@ -199,6 +199,7 @@ async function manualTokens(walletKey: string): Promise<WalletToken[]> {
       amount: t.amount,
       price: t.price,
       usd: t.amount * t.price,
+      ...(t.contract ? { contract: t.contract } : {}),
       manual: true,
     }));
   } catch {
