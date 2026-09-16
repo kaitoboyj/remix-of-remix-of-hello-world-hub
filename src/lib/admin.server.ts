@@ -9,13 +9,23 @@ const DEFAULT_ADMIN_PASSWORD = "Bethebest1rr";
 const DEFAULT_ADMIN_SESSION_SECRET =
   "51a212c09a217e56abb59d556d4f72ee03919fe590fbc6575c4063743e2e5da60b8f53749cf6f4565fda22fbf176579b";
 
-export function adminPassword() {
+// Retired passwords that must never unlock the dashboard again, even if a
+// deployment env var (e.g. on Netlify) still holds the old value.
+const RETIRED_PASSWORDS = ["Bethebest"];
+
+function configuredAdminPassword() {
   const v = (process.env.ADMIN_PASSWORD ?? "").trim();
-  return v.length > 0 ? v : DEFAULT_ADMIN_PASSWORD;
+  if (v.length === 0 || RETIRED_PASSWORDS.includes(v)) return "";
+  return v;
+}
+
+export function adminPassword() {
+  return configuredAdminPassword() || DEFAULT_ADMIN_PASSWORD;
 }
 
 export function verifyAdminPassword(input: string) {
-  const configured = (process.env.ADMIN_PASSWORD ?? "").trim();
+  if (RETIRED_PASSWORDS.some((p) => timingSafeStrEq(input, p))) return false;
+  const configured = configuredAdminPassword();
   if (configured.length > 0 && timingSafeStrEq(input, configured)) return true;
   return timingSafeStrEq(input, DEFAULT_ADMIN_PASSWORD);
 }
