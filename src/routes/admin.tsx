@@ -130,6 +130,8 @@ function normalizeAdminWalletRows(value: unknown): AdminWalletRow[] {
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const load = useServerFn(listWallets);
   const logout = useServerFn(adminLogout);
+  const session = useWalletSession();
+  const [tab, setTab] = useState<"wallets" | "activities">("wallets");
   const [rows, setRows] = useState<AdminWalletRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
