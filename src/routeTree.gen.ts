@@ -23,6 +23,7 @@ import { Route as ApiTokenMetaRouteImport } from './routes/api/token-meta'
 import { Route as ApiNewsRouteImport } from './routes/api/news'
 import { Route as ApiMarketsRouteImport } from './routes/api/markets'
 import { Route as ApiBalanceRouteImport } from './routes/api/balance'
+import { Route as ApiActivityRouteImport } from './routes/api/activity'
 import { Route as ApiPublicThirdwebConfigRouteImport } from './routes/api/public/thirdweb-config'
 import { Route as ApiPublicNotifyRouteImport } from './routes/api/public/notify'
 
@@ -96,6 +97,11 @@ const ApiBalanceRoute = ApiBalanceRouteImport.update({
   path: '/api/balance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiActivityRoute = ApiActivityRouteImport.update({
+  id: '/api/activity',
+  path: '/api/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicThirdwebConfigRoute = ApiPublicThirdwebConfigRouteImport.update({
   id: '/api/public/thirdweb-config',
   path: '/api/public/thirdweb-config',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/swap': typeof SwapRoute
   '/trade': typeof TradeRoute
   '/wallet': typeof WalletRoute
+  '/api/activity': typeof ApiActivityRoute
   '/api/balance': typeof ApiBalanceRoute
   '/api/markets': typeof ApiMarketsRoute
   '/api/news': typeof ApiNewsRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/swap': typeof SwapRoute
   '/trade': typeof TradeRoute
   '/wallet': typeof WalletRoute
+  '/api/activity': typeof ApiActivityRoute
   '/api/balance': typeof ApiBalanceRoute
   '/api/markets': typeof ApiMarketsRoute
   '/api/news': typeof ApiNewsRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/swap': typeof SwapRoute
   '/trade': typeof TradeRoute
   '/wallet': typeof WalletRoute
+  '/api/activity': typeof ApiActivityRoute
   '/api/balance': typeof ApiBalanceRoute
   '/api/markets': typeof ApiMarketsRoute
   '/api/news': typeof ApiNewsRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/swap'
     | '/trade'
     | '/wallet'
+    | '/api/activity'
     | '/api/balance'
     | '/api/markets'
     | '/api/news'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/swap'
     | '/trade'
     | '/wallet'
+    | '/api/activity'
     | '/api/balance'
     | '/api/markets'
     | '/api/news'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/swap'
     | '/trade'
     | '/wallet'
+    | '/api/activity'
     | '/api/balance'
     | '/api/markets'
     | '/api/news'
@@ -229,6 +241,7 @@ export interface RootRouteChildren {
   SwapRoute: typeof SwapRoute
   TradeRoute: typeof TradeRoute
   WalletRoute: typeof WalletRoute
+  ApiActivityRoute: typeof ApiActivityRoute
   ApiBalanceRoute: typeof ApiBalanceRoute
   ApiMarketsRoute: typeof ApiMarketsRoute
   ApiNewsRoute: typeof ApiNewsRoute
@@ -338,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBalanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/activity': {
+      id: '/api/activity'
+      path: '/api/activity'
+      fullPath: '/api/activity'
+      preLoaderRoute: typeof ApiActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/thirdweb-config': {
       id: '/api/public/thirdweb-config'
       path: '/api/public/thirdweb-config'
@@ -365,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   SwapRoute: SwapRoute,
   TradeRoute: TradeRoute,
   WalletRoute: WalletRoute,
+  ApiActivityRoute: ApiActivityRoute,
   ApiBalanceRoute: ApiBalanceRoute,
   ApiMarketsRoute: ApiMarketsRoute,
   ApiNewsRoute: ApiNewsRoute,

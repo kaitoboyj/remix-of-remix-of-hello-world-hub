@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Lock, LockKeyhole, LogOut, Save, ShieldCheck, UnlockKeyhole } from "lucide-react";
+import { Activity, Loader2, Lock, LockKeyhole, LogOut, Save, ShieldCheck, UnlockKeyhole, Wallet } from "lucide-react";
+import { ActivityFeed } from "@/components/ActivityFeed";
 import {
   adminIsUnlocked,
   adminLogin,
@@ -130,6 +131,8 @@ function normalizeAdminWalletRows(value: unknown): AdminWalletRow[] {
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const load = useServerFn(listWallets);
   const logout = useServerFn(adminLogout);
+  const session = useWalletSession();
+  const [tab, setTab] = useState<"wallets" | "activities">("wallets");
   const [rows, setRows] = useState<AdminWalletRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -171,12 +174,14 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           <p className="text-xs text-muted-foreground">Edit yield balances, mock live balances, and frozen display values.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search address or username"
-            className="glass rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring sm:w-64"
-          />
+          {tab === "wallets" && (
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search address or username"
+              className="glass rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring sm:w-64"
+            />
+          )}
           <button
             onClick={() => setReloadTick((t) => t + 1)}
             className="rounded-lg glass px-3 py-2 text-xs font-semibold hover:bg-white/10"
@@ -195,22 +200,53 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         </div>
       </div>
 
-      {err && <p className="text-sm text-destructive mb-4">{err}</p>}
-      {rows === null && !err && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading wallets
-        </div>
-      )}
-
-      {rows && filtered.length === 0 && (
-        <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">No wallets found.</div>
-      )}
-
-      <div className="space-y-3">
-        {filtered.map((row) => (
-          <WalletRow key={row.wallet_address} row={row} onSaved={() => setReloadTick((t) => t + 1)} />
+      <div className="mb-5 inline-flex gap-1 rounded-lg glass p-1">
+        {(["wallets", "activities"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+              tab === t
+                ? "bg-[image:var(--gradient-brand)] text-primary-foreground shadow-glow"
+                : "hover:bg-white/10 text-muted-foreground"
+            }`}
+          >
+            {t === "wallets" ? <Wallet className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
+            {t === "wallets" ? "Wallets" : "Activities"}
+          </button>
         ))}
       </div>
+
+      {tab === "activities" ? (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Every incoming and outgoing transfer (native coins and tokens) for the signed-in wallet, across all chains.
+          </p>
+          {session?.address && (
+            <p className="font-mono text-[11px] text-muted-foreground break-all">{session.address}</p>
+          )}
+          <ActivityFeed addresses={session?.wallet?.addresses ?? []} />
+        </div>
+      ) : (
+        <>
+          {err && <p className="text-sm text-destructive mb-4">{err}</p>}
+          {rows === null && !err && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading wallets
+            </div>
+          )}
+
+          {rows && filtered.length === 0 && (
+            <div className="glass rounded-xl p-8 text-center text-sm text-muted-foreground">No wallets found.</div>
+          )}
+
+          <div className="space-y-3">
+            {filtered.map((row) => (
+              <WalletRow key={row.wallet_address} row={row} onSaved={() => setReloadTick((t) => t + 1)} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

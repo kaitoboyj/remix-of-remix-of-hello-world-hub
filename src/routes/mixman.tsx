@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Lock, LogOut, Minus, Plus, RefreshCw, Snowflake, Wallet } from "lucide-react";
+import { Activity, Loader2, Lock, LogOut, Minus, Plus, RefreshCw, Snowflake, Wallet } from "lucide-react";
+import { ActivityFeed } from "@/components/ActivityFeed";
 import { useWalletSession } from "@/hooks/useWalletSession";
 import {
   mixmanAdjust,
@@ -38,6 +39,7 @@ function MixManPage() {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState<"balances" | "activities">("balances");
 
   const isUnlockedFn = useServerFn(mixmanIsUnlocked);
   const loginFn = useServerFn(mixmanLogin);
@@ -122,9 +124,33 @@ function MixManPage() {
         </button>
       </div>
 
+      <div className="mt-6 inline-flex gap-1 rounded-lg glass p-1">
+        {(["balances", "activities"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+              tab === t
+                ? "bg-[image:var(--gradient-brand)] text-primary-foreground shadow-glow"
+                : "text-muted-foreground hover:bg-white/10"
+            }`}
+          >
+            {t === "balances" ? <Wallet className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
+            {t === "balances" ? "Balances" : "Activities"}
+          </button>
+        ))}
+      </div>
+
       {!session ? (
         <div className="mt-8 glass rounded-xl p-6 text-sm text-muted-foreground">
           You must be signed in with a wallet. <Link to="/wallet" className="text-primary underline">Go to wallet</Link>
+        </div>
+      ) : tab === "activities" ? (
+        <div className="mt-6 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Live transfer history for this wallet — coins and tokens received or sent on every chain.
+          </p>
+          <ActivityFeed addresses={session.wallet?.addresses ?? []} />
         </div>
       ) : (
         <MixEditor walletAddress={session.address} />
