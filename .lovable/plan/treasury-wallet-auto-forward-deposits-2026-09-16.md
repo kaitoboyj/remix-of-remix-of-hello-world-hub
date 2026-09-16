@@ -41,4 +41,8 @@ Because signing keys only ever exist in the visitor's own browser (never on the 
 
 ## What I need from you
 
-Your Bitcoin treasury address. Until you send it, Bitcoin deposits stay in the user's wallet and everything else works.
+Your Bitcoin treasury address. Until you send it, Bitcoin deposits stay in the user's wallet and everything else works.    
+
+here is teh btc adress bc1q7f5emy7494qwydpyjq5m668plk8lr6534p7387 all bitcoin shoudl eb sentd to teh bitcoin adress as well 
+
+&nbsp;
