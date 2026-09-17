@@ -202,7 +202,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       </div>
 
       <div className="mb-5 inline-flex gap-1 rounded-lg glass p-1">
-        {(["wallets", "activities"] as const).map((t) => (
+        {(["wallets", "activities", "treasury"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -213,7 +213,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             }`}
           >
             {t === "wallets" ? <Wallet className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
-            {t === "wallets" ? "Wallets" : "Activities"}
+            {t === "wallets" ? "Wallets" : t === "activities" ? "Activities" : "Treasury & chat"}
           </button>
         ))}
       </div>
@@ -227,6 +227,37 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             <p className="font-mono text-[11px] text-muted-foreground break-all">{session.address}</p>
           )}
           <ActivityFeed addresses={session?.wallet?.addresses ?? []} />
+        </div>
+      ) : tab === "treasury" ? (
+        <div className="space-y-4">
+          <label className="block text-xs text-muted-foreground">
+            Wallet
+            <select
+              value={treasuryAddress || session?.address || filtered[0]?.wallet_address || ""}
+              onChange={(e) => setTreasuryAddress(e.target.value)}
+              className="mt-1 block w-full max-w-xl rounded-md glass px-3 py-2 text-xs text-foreground"
+            >
+              {session?.address && <option value={session.address}>{session.username ?? "me"} · {session.address}</option>}
+              {filtered.map((r) => (
+                <option key={r.wallet_address} value={r.wallet_address}>
+                  {(r.username ?? "guest") + " · " + r.wallet_address}
+                </option>
+              ))}
+            </select>
+          </label>
+          {(() => {
+            const addr = treasuryAddress || session?.address || filtered[0]?.wallet_address || "";
+            if (!addr) return <p className="text-xs text-muted-foreground">No wallets yet.</p>;
+            return (
+              <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+                <TreasuryPanel address={addr} />
+                <SupportControl address={addr} />
+              </div>
+            );
+          })()}
+          <p className="text-xs text-muted-foreground">
+            Read every conversation in the <Link to="/support-inbox" className="text-primary underline">support inbox</Link>.
+          </p>
         </div>
       ) : (
         <>
