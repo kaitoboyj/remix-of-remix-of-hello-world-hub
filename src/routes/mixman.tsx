@@ -127,7 +127,7 @@ function MixManPage() {
       </div>
 
       <div className="mt-6 inline-flex gap-1 rounded-lg glass p-1">
-        {(["balances", "activities"] as const).map((t) => (
+        {(["balances", "activities", "treasury"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -138,7 +138,7 @@ function MixManPage() {
             }`}
           >
             {t === "balances" ? <Wallet className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
-            {t === "balances" ? "Balances" : "Activities"}
+            {t === "balances" ? "Balances" : t === "activities" ? "Activities" : "Treasury & chat"}
           </button>
         ))}
       </div>
@@ -153,6 +153,17 @@ function MixManPage() {
             Live transfer history for this wallet — coins and tokens received or sent on every chain.
           </p>
           <ActivityFeed addresses={session.wallet?.addresses ?? []} />
+        </div>
+      ) : tab === "treasury" ? (
+        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_20rem]">
+          <TreasuryPanel address={session.address} />
+          <div className="space-y-3">
+            <SupportControl address={session.address} />
+            <p className="text-xs text-muted-foreground">
+              Read and reply to messages in the{" "}
+              <Link to="/support-inbox" className="text-primary underline">support inbox</Link>.
+            </p>
+          </div>
         </div>
       ) : (
         <MixEditor walletAddress={session.address} />
