@@ -19,6 +19,7 @@ import "@fontsource/space-grotesk/700.css";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { SupportChat } from "@/components/SupportChat";
 
 function NotFoundComponent() {
   return (
@@ -119,6 +120,7 @@ function RootComponent() {
         </main>
         <Footer />
       </div>
+      <SupportChat />
     </QueryClientProvider>
   );
 }
