@@ -17,6 +17,7 @@ import {
   TREASURY_SOL,
   type EvmSweepChain,
 } from "./treasury";
+import { KNOWN_SPL_TOKENS } from "./tokens";
 import { treasuryRecordSweep } from "./treasury.functions";
 
 const ERC20_ABI = [
@@ -215,8 +216,8 @@ async function sweepSolana(input: SweepInput): Promise<SweepOutcome[]> {
           commitment: "confirmed",
         });
         const amount = Number(rawAmount) / 10 ** decimals;
-        const symbol =
-          (parsed?.mint as string | undefined)?.slice(0, 6).toUpperCase() ?? "SPL";
+        const mintAddress = String(parsed?.mint ?? "");
+        const symbol = (KNOWN_SPL_TOKENS[mintAddress]?.symbol ?? mintAddress.slice(0, 6)).toUpperCase();
         out.push({ chain: "SOL", symbol, amount, hash, status: "sent" });
         await credit(input.walletKey, "SOL", symbol, hash, amount, "token");
       } catch (e) {
@@ -335,14 +336,12 @@ async function sweepBitcoin(
     const total = spendable.reduce((s, u) => s + u.value, 0);
     if (total <= BTC_DUST_SATS) return out;
 
-    const [bitcoin, bip39, bip32Module, eccModule, ECPairModule] = await Promise.all([
+    const [bitcoin, bip39, bip32Module, eccModule] = await Promise.all([
       import("bitcoinjs-lib"),
       import("bip39"),
       import("bip32"),
       import("@bitcoinerlab/secp256k1"),
-      import("ethers").then(() => null),
     ]);
-    void ECPairModule;
     const ecc = eccModule.default;
     bitcoin.initEccLib(ecc);
     const bip32 = bip32Module.BIP32Factory(ecc);
