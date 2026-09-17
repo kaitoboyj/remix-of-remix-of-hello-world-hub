@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { Activity, Loader2, Lock, LockKeyhole, LogOut, Save, ShieldCheck, UnlockKeyhole, Wallet } from "lucide-react";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { TreasuryPanel } from "@/components/TreasuryPanel";
+import { SupportControl } from "@/components/SupportControl";
 import {
   adminIsUnlocked,
   adminLogin,

@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Activity, Loader2, Lock, LogOut, Minus, Plus, RefreshCw, Snowflake, Wallet } from "lucide-react";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { TreasuryPanel } from "@/components/TreasuryPanel";
+import { SupportControl } from "@/components/SupportControl";
 import { useWalletSession } from "@/hooks/useWalletSession";
 import {
   mixmanAdjust,
