@@ -41,7 +41,7 @@ function MixManPage() {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"balances" | "activities">("balances");
+  const [tab, setTab] = useState<"balances" | "activities" | "treasury">("balances");
 
   const isUnlockedFn = useServerFn(mixmanIsUnlocked);
   const loginFn = useServerFn(mixmanLogin);
