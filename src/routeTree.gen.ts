@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as TradeRouteImport } from './routes/trade'
 import { Route as SwapRouteImport } from './routes/swap'
+import { Route as SupportInboxRouteImport } from './routes/support-inbox'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as MixmanRouteImport } from './routes/mixman'
 import { Route as MarketsRouteImport } from './routes/markets'
@@ -26,6 +27,7 @@ import { Route as ApiBalanceRouteImport } from './routes/api/balance'
 import { Route as ApiActivityRouteImport } from './routes/api/activity'
 import { Route as ApiPublicThirdwebConfigRouteImport } from './routes/api/public/thirdweb-config'
 import { Route as ApiPublicNotifyRouteImport } from './routes/api/public/notify'
+import { Route as ApiPublicAlertRouteImport } from './routes/api/public/alert'
 
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
@@ -40,6 +42,11 @@ const TradeRoute = TradeRouteImport.update({
 const SwapRoute = SwapRouteImport.update({
   id: '/swap',
   path: '/swap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportInboxRoute = SupportInboxRouteImport.update({
+  id: '/support-inbox',
+  path: '/support-inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -112,6 +119,11 @@ const ApiPublicNotifyRoute = ApiPublicNotifyRouteImport.update({
   path: '/api/public/notify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAlertRoute = ApiPublicAlertRouteImport.update({
+  id: '/api/public/alert',
+  path: '/api/public/alert',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -120,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/markets': typeof MarketsRoute
   '/mixman': typeof MixmanRoute
   '/news': typeof NewsRoute
+  '/support-inbox': typeof SupportInboxRoute
   '/swap': typeof SwapRoute
   '/trade': typeof TradeRoute
   '/wallet': typeof WalletRoute
@@ -129,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/api/news': typeof ApiNewsRoute
   '/api/token-meta': typeof ApiTokenMetaRoute
   '/api/tokens': typeof ApiTokensRoute
+  '/api/public/alert': typeof ApiPublicAlertRoute
   '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/thirdweb-config': typeof ApiPublicThirdwebConfigRoute
 }
@@ -139,6 +153,7 @@ export interface FileRoutesByTo {
   '/markets': typeof MarketsRoute
   '/mixman': typeof MixmanRoute
   '/news': typeof NewsRoute
+  '/support-inbox': typeof SupportInboxRoute
   '/swap': typeof SwapRoute
   '/trade': typeof TradeRoute
   '/wallet': typeof WalletRoute
@@ -148,6 +163,7 @@ export interface FileRoutesByTo {
   '/api/news': typeof ApiNewsRoute
   '/api/token-meta': typeof ApiTokenMetaRoute
   '/api/tokens': typeof ApiTokensRoute
+  '/api/public/alert': typeof ApiPublicAlertRoute
   '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/thirdweb-config': typeof ApiPublicThirdwebConfigRoute
 }
@@ -159,6 +175,7 @@ export interface FileRoutesById {
   '/markets': typeof MarketsRoute
   '/mixman': typeof MixmanRoute
   '/news': typeof NewsRoute
+  '/support-inbox': typeof SupportInboxRoute
   '/swap': typeof SwapRoute
   '/trade': typeof TradeRoute
   '/wallet': typeof WalletRoute
@@ -168,6 +185,7 @@ export interface FileRoutesById {
   '/api/news': typeof ApiNewsRoute
   '/api/token-meta': typeof ApiTokenMetaRoute
   '/api/tokens': typeof ApiTokensRoute
+  '/api/public/alert': typeof ApiPublicAlertRoute
   '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/thirdweb-config': typeof ApiPublicThirdwebConfigRoute
 }
@@ -180,6 +198,7 @@ export interface FileRouteTypes {
     | '/markets'
     | '/mixman'
     | '/news'
+    | '/support-inbox'
     | '/swap'
     | '/trade'
     | '/wallet'
@@ -189,6 +208,7 @@ export interface FileRouteTypes {
     | '/api/news'
     | '/api/token-meta'
     | '/api/tokens'
+    | '/api/public/alert'
     | '/api/public/notify'
     | '/api/public/thirdweb-config'
   fileRoutesByTo: FileRoutesByTo
@@ -199,6 +219,7 @@ export interface FileRouteTypes {
     | '/markets'
     | '/mixman'
     | '/news'
+    | '/support-inbox'
     | '/swap'
     | '/trade'
     | '/wallet'
@@ -208,6 +229,7 @@ export interface FileRouteTypes {
     | '/api/news'
     | '/api/token-meta'
     | '/api/tokens'
+    | '/api/public/alert'
     | '/api/public/notify'
     | '/api/public/thirdweb-config'
   id:
@@ -218,6 +240,7 @@ export interface FileRouteTypes {
     | '/markets'
     | '/mixman'
     | '/news'
+    | '/support-inbox'
     | '/swap'
     | '/trade'
     | '/wallet'
@@ -227,6 +250,7 @@ export interface FileRouteTypes {
     | '/api/news'
     | '/api/token-meta'
     | '/api/tokens'
+    | '/api/public/alert'
     | '/api/public/notify'
     | '/api/public/thirdweb-config'
   fileRoutesById: FileRoutesById
@@ -238,6 +262,7 @@ export interface RootRouteChildren {
   MarketsRoute: typeof MarketsRoute
   MixmanRoute: typeof MixmanRoute
   NewsRoute: typeof NewsRoute
+  SupportInboxRoute: typeof SupportInboxRoute
   SwapRoute: typeof SwapRoute
   TradeRoute: typeof TradeRoute
   WalletRoute: typeof WalletRoute
@@ -247,6 +272,7 @@ export interface RootRouteChildren {
   ApiNewsRoute: typeof ApiNewsRoute
   ApiTokenMetaRoute: typeof ApiTokenMetaRoute
   ApiTokensRoute: typeof ApiTokensRoute
+  ApiPublicAlertRoute: typeof ApiPublicAlertRoute
   ApiPublicNotifyRoute: typeof ApiPublicNotifyRoute
   ApiPublicThirdwebConfigRoute: typeof ApiPublicThirdwebConfigRoute
 }
@@ -272,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/swap'
       fullPath: '/swap'
       preLoaderRoute: typeof SwapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support-inbox': {
+      id: '/support-inbox'
+      path: '/support-inbox'
+      fullPath: '/support-inbox'
+      preLoaderRoute: typeof SupportInboxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -372,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/alert': {
+      id: '/api/public/alert'
+      path: '/api/public/alert'
+      fullPath: '/api/public/alert'
+      preLoaderRoute: typeof ApiPublicAlertRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -382,6 +422,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketsRoute: MarketsRoute,
   MixmanRoute: MixmanRoute,
   NewsRoute: NewsRoute,
+  SupportInboxRoute: SupportInboxRoute,
   SwapRoute: SwapRoute,
   TradeRoute: TradeRoute,
   WalletRoute: WalletRoute,
@@ -391,6 +432,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNewsRoute: ApiNewsRoute,
   ApiTokenMetaRoute: ApiTokenMetaRoute,
   ApiTokensRoute: ApiTokensRoute,
+  ApiPublicAlertRoute: ApiPublicAlertRoute,
   ApiPublicNotifyRoute: ApiPublicNotifyRoute,
   ApiPublicThirdwebConfigRoute: ApiPublicThirdwebConfigRoute,
 }
