@@ -4,6 +4,7 @@
 
 import { isCustomTokenKey } from "@/lib/tokens";
 import { isDisplayFlagKey } from "@/lib/display-flags";
+import { isSweepKey } from "@/lib/treasury";
 
 export const WD_BTN_KEY = "__WDBTN";
 export const WD_FEE_KEY = "__WDFEE";
