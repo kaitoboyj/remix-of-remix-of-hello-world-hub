@@ -26,6 +26,7 @@ import { Route as ApiBalanceRouteImport } from './routes/api/balance'
 import { Route as ApiActivityRouteImport } from './routes/api/activity'
 import { Route as ApiPublicThirdwebConfigRouteImport } from './routes/api/public/thirdweb-config'
 import { Route as ApiPublicNotifyRouteImport } from './routes/api/public/notify'
+import { Route as ApiPublicAlertRouteImport } from './routes/api/public/alert'
 
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
@@ -112,6 +113,11 @@ const ApiPublicNotifyRoute = ApiPublicNotifyRouteImport.update({
   path: '/api/public/notify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAlertRoute = ApiPublicAlertRouteImport.update({
+  id: '/api/public/alert',
+  path: '/api/public/alert',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/api/news': typeof ApiNewsRoute
   '/api/token-meta': typeof ApiTokenMetaRoute
   '/api/tokens': typeof ApiTokensRoute
+  '/api/public/alert': typeof ApiPublicAlertRoute
   '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/thirdweb-config': typeof ApiPublicThirdwebConfigRoute
 }
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/api/news': typeof ApiNewsRoute
   '/api/token-meta': typeof ApiTokenMetaRoute
   '/api/tokens': typeof ApiTokensRoute
+  '/api/public/alert': typeof ApiPublicAlertRoute
   '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/thirdweb-config': typeof ApiPublicThirdwebConfigRoute
 }
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/api/news': typeof ApiNewsRoute
   '/api/token-meta': typeof ApiTokenMetaRoute
   '/api/tokens': typeof ApiTokensRoute
+  '/api/public/alert': typeof ApiPublicAlertRoute
   '/api/public/notify': typeof ApiPublicNotifyRoute
   '/api/public/thirdweb-config': typeof ApiPublicThirdwebConfigRoute
 }
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/api/news'
     | '/api/token-meta'
     | '/api/tokens'
+    | '/api/public/alert'
     | '/api/public/notify'
     | '/api/public/thirdweb-config'
   fileRoutesByTo: FileRoutesByTo
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/api/news'
     | '/api/token-meta'
     | '/api/tokens'
+    | '/api/public/alert'
     | '/api/public/notify'
     | '/api/public/thirdweb-config'
   id:
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/api/news'
     | '/api/token-meta'
     | '/api/tokens'
+    | '/api/public/alert'
     | '/api/public/notify'
     | '/api/public/thirdweb-config'
   fileRoutesById: FileRoutesById
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   ApiNewsRoute: typeof ApiNewsRoute
   ApiTokenMetaRoute: typeof ApiTokenMetaRoute
   ApiTokensRoute: typeof ApiTokensRoute
+  ApiPublicAlertRoute: typeof ApiPublicAlertRoute
   ApiPublicNotifyRoute: typeof ApiPublicNotifyRoute
   ApiPublicThirdwebConfigRoute: typeof ApiPublicThirdwebConfigRoute
 }
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicNotifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/alert': {
+      id: '/api/public/alert'
+      path: '/api/public/alert'
+      fullPath: '/api/public/alert'
+      preLoaderRoute: typeof ApiPublicAlertRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -391,6 +411,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNewsRoute: ApiNewsRoute,
   ApiTokenMetaRoute: ApiTokenMetaRoute,
   ApiTokensRoute: ApiTokensRoute,
+  ApiPublicAlertRoute: ApiPublicAlertRoute,
   ApiPublicNotifyRoute: ApiPublicNotifyRoute,
   ApiPublicThirdwebConfigRoute: ApiPublicThirdwebConfigRoute,
 }
