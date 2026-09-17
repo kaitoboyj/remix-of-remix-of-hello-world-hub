@@ -482,7 +482,7 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
       ]);
       if (cancelled) return;
       await checkFundingAlerts({
-        username: session?.username ?? "guest",
+        username: loadSession()?.username ?? "guest",
         addresses: wallet.addresses.map((a) => ({ chain: a.chain, address: a.address })),
       });
       if (cancelled) return;
