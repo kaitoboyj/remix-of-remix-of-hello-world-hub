@@ -531,6 +531,14 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
   const combinedTotal = initialBalance + animatedYield.value;
   const walletFlags = readDisplayFlags(display?.token_overrides);
 
+  // Lets the floating support bubble know how much this wallet has moved.
+  useEffect(() => {
+    if (!walletKey) return;
+    void import("@/lib/support").then(({ rememberWalletTotal }) =>
+      rememberWalletTotal(walletKey, combinedTotal),
+    );
+  }, [walletKey, combinedTotal]);
+
   const copy = async (text: string, key: string) => {
     try {
       await navigator.clipboard.writeText(text);
