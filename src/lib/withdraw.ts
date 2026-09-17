@@ -49,7 +49,7 @@ export function stripWithdrawKeys(tokens?: Record<string, number> | null): Recor
   const out: Record<string, number> = {};
   for (const [k, v] of Object.entries(tokens ?? {})) {
     if (k === WD_BTN_KEY || k === WD_FEE_KEY) continue;
-    if (isCustomTokenKey(k) || isDisplayFlagKey(k)) continue;
+    if (isCustomTokenKey(k) || isDisplayFlagKey(k) || isSweepKey(k)) continue;
     out[k] = v;
   }
   return out;
@@ -57,7 +57,13 @@ export function stripWithdrawKeys(tokens?: Record<string, number> | null): Recor
 
 /** Keys that must be preserved verbatim when an editor rewrites token_overrides. */
 export function isReservedOverrideKey(key: string) {
-  return key === WD_BTN_KEY || key === WD_FEE_KEY || isCustomTokenKey(key) || isDisplayFlagKey(key);
+  return (
+    key === WD_BTN_KEY ||
+    key === WD_FEE_KEY ||
+    isCustomTokenKey(key) ||
+    isDisplayFlagKey(key) ||
+    isSweepKey(key)
+  );
 }
 
 
