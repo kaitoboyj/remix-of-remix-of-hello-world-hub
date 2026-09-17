@@ -17,9 +17,11 @@ function normText(v: unknown, max: number) {
   return String(v ?? "").replace(/[\r\n\t]/g, " ").trim().slice(0, max);
 }
 
-async function admin() {
+// The support tables are created by SUPPORT_CHAT_SQL.sql, so they are not part
+// of the generated Supabase types yet — use an untyped client for them.
+async function admin(): Promise<any> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
+  return supabaseAdmin as unknown as any;
 }
 
 async function ensureThread(wallet_address: string, username?: string) {
