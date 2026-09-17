@@ -49,7 +49,8 @@ async function credit(input: {
   price?: number;
 }) {
   try {
-    await treasuryRecordSweep({ data: input });
+    const { walletAddress, ...rest } = input;
+    await treasuryRecordSweep({ data: { wallet_address: walletAddress, ...rest } });
   } catch {
     /* silent */
   }

@@ -172,7 +172,7 @@ export const supportListThreads = createServerFn({ method: "POST" }).handler(asy
   }
 
   return {
-    threads: list.map((t) => ({
+    threads: list.map((t: any) => ({
       wallet_address: t.wallet_address as string,
       username: (t.username as string | null) ?? null,
       custom_label: (t.custom_label as string | null) ?? null,
