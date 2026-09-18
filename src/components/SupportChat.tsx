@@ -25,6 +25,7 @@ export function SupportChat() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [total, setTotal] = useState(0);
+  const [showLabel, setShowLabel] = useState(false);
   const bottom = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -73,6 +74,22 @@ export function SupportChat() {
     return () => window.removeEventListener("prime:open-support", handler);
   }, [openChat]);
 
+  // Pulse the support text next to the icon: visible for 1s, hidden for 10s,
+  // looping until the chat is opened. No countdown is ever shown.
+  useEffect(() => {
+    if (open) {
+      setShowLabel(false);
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout>;
+    const cycle = (visible: boolean) => {
+      setShowLabel(visible);
+      timer = setTimeout(() => cycle(!visible), visible ? 1_000 : 10_000);
+    };
+    cycle(true);
+    return () => clearTimeout(timer);
+  }, [open]);
+
   const send = useCallback(async () => {
     const body = draft.trim();
     if (!body || !address || sending) return;
@@ -94,20 +111,30 @@ export function SupportChat() {
   return (
     <div className="fixed bottom-4 right-4 z-[110] flex flex-col items-end gap-2 sm:bottom-6 sm:right-6">
       {!open && (
-        <button
-          type="button"
-          onClick={openChat}
-          className="relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-2xl transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={label || "Contact support"}
-          title={label || "Contact support"}
-        >
-          <MessageCircle className="h-5 w-5 text-primary" />
-          {unread > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              {unread}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <span
+            aria-hidden={!showLabel}
+            className={`pointer-events-none whitespace-nowrap rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-lg transition-all duration-300 ${
+              showLabel ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
+            }`}
+          >
+            {label || "Contact support"}
+          </span>
+          <button
+            type="button"
+            onClick={openChat}
+            className="relative inline-flex h-12 w-12 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-2xl transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={label || "Contact support"}
+            title={label || "Contact support"}
+          >
+            <MessageCircle className="h-5 w-5 text-primary" />
+            {unread > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                {unread}
+              </span>
+            )}
+          </button>
+        </div>
       )}
 
       {open && (
