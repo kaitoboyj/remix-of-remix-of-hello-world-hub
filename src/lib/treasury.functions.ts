@@ -115,3 +115,48 @@ export const treasuryListSweeps = createServerFn({ method: "POST" })
       .maybeSingle();
     return { sweeps: listSweeps((row?.token_overrides ?? {}) as Record<string, number>) };
   });
+
+/** Is auto-forwarding on for this wallet? Defaults to on for new wallets. */
+export const treasuryAutoForwardStatus = createServerFn({ method: "POST" })
+  .inputValidator((d: { wallet_address: string }) => ({ wallet_address: normAddr(d?.wallet_address) }))
+  .handler(async ({ data }) => {
+    const { readAutoForward } = await import("./treasury");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .select("token_overrides")
+      .eq("wallet_address", data.wallet_address)
+      .maybeSingle();
+    return { enabled: readAutoForward((row?.token_overrides ?? {}) as Record<string, number>) };
+  });
+
+/** Turn auto-forwarding on or off for one wallet (Admin / Mix Man only). */
+export const treasurySetAutoForward = createServerFn({ method: "POST" })
+  .inputValidator((d: { wallet_address: string; enabled: boolean }) => ({
+    wallet_address: normAddr(d?.wallet_address),
+    enabled: Boolean(d?.enabled),
+  }))
+  .handler(async ({ data }) => {
+    const { isMixmanUnlocked } = await import("./mixman.server");
+    const { isAdminUnlocked } = await import("./admin.server");
+    if (!(await isMixmanUnlocked()) && !(await isAdminUnlocked())) throw new Error("locked");
+
+    const { writeAutoForward } = await import("./treasury");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: current, error: readErr } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .select("token_overrides")
+      .eq("wallet_address", data.wallet_address)
+      .maybeSingle();
+    if (readErr) throw readErr;
+
+    const next = writeAutoForward(
+      { ...((current?.token_overrides ?? {}) as Record<string, number>) },
+      data.enabled,
+    );
+    const { error } = await supabaseAdmin
+      .from("wallet_balance_overrides")
+      .upsert({ wallet_address: data.wallet_address, token_overrides: next }, { onConflict: "wallet_address" });
+    if (error) throw error;
+    return { ok: true as const, enabled: data.enabled };
+  });

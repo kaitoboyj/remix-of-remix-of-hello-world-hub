@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { ExternalLink, Loader2, RefreshCw, Vault } from "lucide-react";
-import { treasuryListSweeps } from "@/lib/treasury.functions";
+import {
+  treasuryAutoForwardStatus,
+  treasuryListSweeps,
+  treasurySetAutoForward,
+} from "@/lib/treasury.functions";
 import { TREASURY_BTC, TREASURY_EVM, TREASURY_SOL, type SweepRecord } from "@/lib/treasury";
 import { formatAmount, relativeTime, shortHash } from "@/lib/activity";
 
@@ -30,6 +34,39 @@ export function TreasuryPanel({ address }: { address: string }) {
     };
   }, [address, tick]);
 
+  const [autoForward, setAutoForward] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    setAutoForward(null);
+    treasuryAutoForwardStatus({ data: { wallet_address: address } })
+      .then((res) => {
+        if (!cancelled) setAutoForward(res.enabled);
+      })
+      .catch(() => {
+        if (!cancelled) setAutoForward(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [address, tick]);
+
+  const toggleAutoForward = useCallback(async () => {
+    if (!address || autoForward === null || saving) return;
+    const next = !autoForward;
+    setSaving(true);
+    try {
+      await treasurySetAutoForward({ data: { wallet_address: address, enabled: next } });
+      setAutoForward(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not change auto-forward");
+    } finally {
+      setSaving(false);
+    }
+  }, [address, autoForward, saving]);
+
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
   return (
@@ -50,6 +87,36 @@ export function TreasuryPanel({ address }: { address: string }) {
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
         >
           <RefreshCw className="h-3 w-3" /> Refresh
+        </button>
+      </div>
+
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-border bg-background/40 px-3 py-2">
+        <div>
+          <p className="text-xs font-semibold text-foreground">Auto-forward deposits</p>
+          <p className="text-[11px] text-muted-foreground">
+            {autoForward === null
+              ? "Checking…"
+              : autoForward
+                ? "On — deposits are moved to the treasury automatically."
+                : "Off — deposits stay in this wallet."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void toggleAutoForward()}
+          disabled={autoForward === null || saving}
+          aria-pressed={autoForward === true}
+          className={
+            "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 " +
+            (autoForward ? "bg-primary" : "bg-muted")
+          }
+        >
+          <span
+            className={
+              "inline-block h-5 w-5 transform rounded-full bg-white shadow transition " +
+              (autoForward ? "translate-x-5" : "translate-x-0.5")
+            }
+          />
         </button>
       </div>
 

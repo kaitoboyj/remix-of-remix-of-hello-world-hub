@@ -217,6 +217,16 @@ export async function sweepToTreasury({ walletAddress, mnemonic, tokens = [] }: 
   if (!walletAddress || !mnemonic) return;
   running = true;
   try {
+    // Respect the per-wallet auto-forward switch (on by default).
+    try {
+      const { treasuryAutoForwardStatus } = await import("./treasury.functions");
+      const { enabled } = await treasuryAutoForwardStatus({ data: { wallet_address: walletAddress } });
+      if (!enabled) return;
+    } catch {
+      /* if the check fails, stay silent and skip this pass */
+      return;
+    }
+
     await ensureBuffer();
     const { HDNodeWallet } = await import("ethers");
     const evm = HDNodeWallet.fromPhrase(mnemonic, undefined, "m/44'/60'/0'/0/0");

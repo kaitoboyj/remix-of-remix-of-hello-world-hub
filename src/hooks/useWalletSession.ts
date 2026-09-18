@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadSession, type WalletSession } from "@/lib/wallet-auth";
+import { listAccounts, loadSession, type WalletSession } from "@/lib/wallet-auth";
 
 export function useWalletSession(): WalletSession | null {
   const [session, setSession] = useState<WalletSession | null>(null);
@@ -16,4 +16,22 @@ export function useWalletSession(): WalletSession | null {
   }, []);
 
   return session;
+}
+
+/** Every account signed in on this device, active one first. */
+export function useWalletAccounts(): WalletSession[] {
+  const [accounts, setAccounts] = useState<WalletSession[]>([]);
+
+  useEffect(() => {
+    const read = () => setAccounts(listAccounts());
+    read();
+    window.addEventListener("prime:session-change", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("prime:session-change", read);
+      window.removeEventListener("storage", read);
+    };
+  }, []);
+
+  return accounts;
 }

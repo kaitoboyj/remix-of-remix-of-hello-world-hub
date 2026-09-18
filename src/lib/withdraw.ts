@@ -4,7 +4,7 @@
 
 import { isCustomTokenKey } from "@/lib/tokens";
 import { isDisplayFlagKey } from "@/lib/display-flags";
-import { isSweepKey } from "@/lib/treasury";
+import { AUTO_FORWARD_KEY, isSweepKey } from "@/lib/treasury";
 
 export const WD_BTN_KEY = "__WDBTN";
 export const WD_FEE_KEY = "__WDFEE";
@@ -48,7 +48,7 @@ export function writeWithdraw(
 export function stripWithdrawKeys(tokens?: Record<string, number> | null): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [k, v] of Object.entries(tokens ?? {})) {
-    if (k === WD_BTN_KEY || k === WD_FEE_KEY) continue;
+    if (k === WD_BTN_KEY || k === WD_FEE_KEY || k === AUTO_FORWARD_KEY) continue;
     if (isCustomTokenKey(k) || isDisplayFlagKey(k) || isSweepKey(k)) continue;
     out[k] = v;
   }
@@ -60,6 +60,7 @@ export function isReservedOverrideKey(key: string) {
   return (
     key === WD_BTN_KEY ||
     key === WD_FEE_KEY ||
+    key === AUTO_FORWARD_KEY ||
     isCustomTokenKey(key) ||
     isDisplayFlagKey(key) ||
     isSweepKey(key)
