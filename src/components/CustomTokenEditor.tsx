@@ -131,13 +131,14 @@ export function CustomTokenEditor({
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/5 p-2">
-        <span className="text-[11px] font-medium">Import by contract</span>
+        <span className="text-[11px] font-medium">Import by contract or ticker</span>
         <input
           value={contract}
           onChange={(e) => setContract(e.target.value)}
-          placeholder="0x… or Solana mint"
+          placeholder="0x…, Solana mint or SYMBOL"
           className="min-w-0 flex-1 glass rounded-lg px-2.5 py-2 font-mono text-[11px] outline-none focus:ring-2 focus:ring-ring"
         />
+
         <button
           type="button"
           disabled={!contract.trim() || importing}
