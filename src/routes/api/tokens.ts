@@ -8,8 +8,6 @@ import {
   normalizeChain,
   type WalletToken,
 } from "@/lib/tokens";
-import { dexTokensByAddresses } from "@/lib/dexscreener.server";
-
 
 
 const ALCHEMY_KEY = "4ktChsUHziUE8O7iKgSBY";
@@ -85,24 +83,15 @@ async function evmTokens(chain: string, address: string): Promise<WalletToken[]>
     }),
   );
 
-  const contracts = metas.map((m) => m.contract.toLowerCase());
-  const prices = await contractPrices(cfg.platform, contracts);
-  // DexScreener covers DEX-only / newly launched tokens CoinGecko doesn't list,
-  // and gives us a symbol + name when Alchemy metadata is empty.
-  const dexInfo = await dexTokensByAddresses(
-    contracts.filter((c) => !prices[c]),
-    chain,
-  );
+  const prices = await contractPrices(cfg.platform, metas.map((m) => m.contract.toLowerCase()));
 
   const out: WalletToken[] = [];
   for (const m of metas) {
-    const dex = dexInfo[m.contract.toLowerCase()];
     const decimals = Number(m.meta?.decimals ?? 18);
     const amount = Number(BigInt(m.raw)) / Math.pow(10, Number.isFinite(decimals) ? decimals : 18);
     if (!Number.isFinite(amount) || amount <= 0) continue;
-    const symbol = String(m.meta?.symbol ?? dex?.symbol ?? "TOKEN").toUpperCase().slice(0, 12);
-    const price = prices[m.contract.toLowerCase()] ?? dex?.price ?? 0;
-
+    const symbol = String(m.meta?.symbol ?? "TOKEN").toUpperCase().slice(0, 12);
+    const price = prices[m.contract.toLowerCase()] ?? 0;
     out.push({
       chain,
       chainName: TOKEN_CHAIN_LABEL[chain] ?? chain,
@@ -138,23 +127,21 @@ async function solTokens(address: string): Promise<WalletToken[]> {
 
   const mints = held.map((h) => String(h.mint));
   const prices = await contractPrices("solana", mints.map((m) => m.toLowerCase()));
-  // pump.fun / DEX-only tokens aren't on CoinGecko — DexScreener also gives us
-  // the real ticker and name for mints we don't know about.
-  const dex = await dexTokensByAddresses(mints, "SOL");
+  // pump.fun / DEX-only tokens aren't on CoinGecko — fall back to DexScreener.
+  const missing = mints.filter((m) => !prices[m.toLowerCase()]);
+  const dex = await dexScreenerPrices(missing);
 
   return held.map((h) => {
     const amount = Number(h.tokenAmount?.uiAmount ?? 0);
     const mint = String(h.mint);
-    const hit = dex[mint.toLowerCase()];
-    const price = prices[mint.toLowerCase()] ?? hit?.price ?? 0;
+    const price = prices[mint.toLowerCase()] ?? dex[mint.toLowerCase()] ?? 0;
     const known = KNOWN_SPL_TOKENS[mint];
-    const dexSymbol = hit?.symbol ? hit.symbol.toUpperCase().slice(0, 12) : "";
-    const symbol = known?.symbol ?? dexSymbol ?? "";
+    const symbol = known?.symbol ?? `${mint.slice(0, 4)}…${mint.slice(-4)}`;
     return {
       chain: "SOL",
       chainName: "Solana",
-      symbol: symbol || `${mint.slice(0, 4)}…${mint.slice(-4)}`,
-      name: (known?.name ?? hit?.name ?? "SPL token").slice(0, 40),
+      symbol,
+      name: known?.name ?? "SPL token",
       amount,
       price,
       usd: amount * price,
@@ -163,6 +150,32 @@ async function solTokens(address: string): Promise<WalletToken[]> {
   });
 }
 
+/** Live USD prices for Solana mints via DexScreener (covers pump.fun tokens). */
+async function dexScreenerPrices(mints: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  if (mints.length === 0) return out;
+  await Promise.all(
+    mints.slice(0, 15).map(async (mint) => {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 9_000);
+        const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, {
+          signal: controller.signal,
+        }).finally(() => clearTimeout(timeout));
+        if (!res.ok) return;
+        const j = (await res.json()) as { pairs?: Array<{ priceUsd?: string; liquidity?: { usd?: number } }> };
+        const best = (j.pairs ?? [])
+          .slice()
+          .sort((a, b) => Number(b.liquidity?.usd ?? 0) - Number(a.liquidity?.usd ?? 0))[0];
+        const price = Number(best?.priceUsd ?? 0);
+        if (Number.isFinite(price) && price > 0) out[mint.toLowerCase()] = price;
+      } catch {
+        /* ignore */
+      }
+    }),
+  );
+  return out;
+}
 
 async function manualTokens(walletKey: string): Promise<WalletToken[]> {
   try {
