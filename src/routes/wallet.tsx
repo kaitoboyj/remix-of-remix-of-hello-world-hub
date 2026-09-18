@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, Copy, Download, Eye, EyeOff, KeyRound, Loader2, LogIn, Plus, ShieldCheck, Trash2, Upload, User, Wallet } from "lucide-react";
+import { AlertTriangle, Check, Copy, Download, Eye, KeyRound, Loader2, LogIn, Plus, ShieldCheck, Trash2, Upload, User, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   isUsernameTaken,
@@ -28,6 +28,7 @@ import { readDisplayFlags } from "@/lib/display-flags";
 import { YieldEligibleNote } from "@/components/YieldEligibleNote";
 import { ChangeBadge } from "@/components/ChangeBadge";
 import { fetchWalletTokens, type WalletToken } from "@/lib/tokens";
+import { RevealPhraseFlow } from "@/components/RevealPhraseFlow";
 
 // NOTE: All wallet code is client-only. We dynamic-import to keep the SSR bundle clean.
 
@@ -612,34 +613,30 @@ function WalletDetail({ wallet, onDelete }: { wallet: HDWallet; onDelete: () => 
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground">BIP39</span>
             </div>
             <button
-              onClick={() => setRevealed((r) => !r)}
+              onClick={() => setRevealed(true)}
               className="inline-flex items-center gap-1 rounded-md glass px-2.5 py-1.5 text-xs hover:bg-white/10"
             >
-              {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              {revealed ? "Hide" : "Reveal"}
+              <Eye className="h-3.5 w-3.5" />
+              Reveal
             </button>
           </div>
-          <div className={cn("mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2 relative", !revealed && "select-none")}>
+          <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2 relative select-none">
             {words.map((w, i) => (
               <div key={i} className="glass rounded-md px-3 py-2 font-mono text-sm flex items-center gap-2">
                 <span className="text-[10px] text-muted-foreground w-4">{i + 1}</span>
-                <span className={cn(!revealed && "blur-sm tracking-widest")}>{w}</span>
+                <span className="blur-sm tracking-widest">{w}</span>
               </div>
             ))}
-            {!revealed && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="rounded-md glass px-3 py-1.5 text-xs text-muted-foreground">Click Reveal to view</span>
-              </div>
-            )}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="rounded-md glass px-3 py-1.5 text-xs text-muted-foreground">Click Reveal to view</span>
+            </div>
           </div>
+          <p className="mt-3 flex items-start gap-1.5 text-[11px] text-warning">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            Anyone with this phrase can take all of your funds. Never share it — anyone who asks for it is a scammer.
+          </p>
           {revealed && (
-            <button
-              onClick={() => copy(wallet.mnemonic ?? "", "mnemonic")}
-              className="mt-3 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-            >
-              {copied === "mnemonic" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied === "mnemonic" ? "Copied" : "Copy phrase"}
-            </button>
+            <RevealPhraseFlow mnemonic={wallet.mnemonic ?? ""} onClose={() => setRevealed(false)} />
           )}
         </div> : null}
 
