@@ -10,6 +10,7 @@ import {
   lookupProfileByAddress,
   recordWalletLogin,
   registerWalletProfile,
+  clearSession,
   listAccounts,
   saveSession,
   switchAccount,
@@ -215,8 +216,11 @@ function WalletPage() {
   };
 
   const onDelete = (id: string) => {
+    const owner = listAccounts().find((a) => a.wallet?.id === id);
     setWallets((prev) => prev.filter((w) => w.id !== id));
     if (activeId === id) setActiveId(null);
+    // Removing a wallet signs that account out; other accounts stay signed in.
+    if (owner) clearSession(owner.address);
   };
 
   return (
