@@ -140,12 +140,45 @@ export function listAccounts(): WalletSession[] {
   );
 }
 
+/** Record this device against a wallet (best-effort, never blocks the UI). */
+function trackDevice(session: WalletSession) {
+  void (async () => {
+    try {
+      const [{ describeDevice }, { recordDeviceSessionFn }] = await Promise.all([
+        import("@/lib/device-info"),
+        import("@/lib/devices.functions"),
+      ]);
+      await recordDeviceSessionFn({
+        data: { ...describeDevice(), wallet_address: session.address, username: session.username ?? null },
+      });
+    } catch {
+      /* best-effort */
+    }
+  })();
+}
+
+function trackDeviceLogout(address?: string) {
+  if (!address) return;
+  void (async () => {
+    try {
+      const [{ deviceId }, { markDeviceLoggedOutFn }] = await Promise.all([
+        import("@/lib/device-info"),
+        import("@/lib/devices.functions"),
+      ]);
+      await markDeviceLoggedOutFn({ data: { wallet_address: address, device_id: deviceId() } });
+    } catch {
+      /* best-effort */
+    }
+  })();
+}
+
 /** Sign in an account (or refresh it) and make it the active one. */
 export function saveSession(session: WalletSession) {
   const list = readAccounts().filter((s) => s.address !== session.address);
   writeAccounts([session, ...list]);
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   announce();
+  trackDevice(session);
 }
 
 /** Switch the active account to another one already signed in on this device. */
@@ -154,6 +187,7 @@ export function switchAccount(address: string): WalletSession | null {
   if (!next) return null;
   localStorage.setItem(SESSION_KEY, JSON.stringify(next));
   announce();
+  trackDevice(next);
   return next;
 }
 
@@ -172,6 +206,7 @@ export function clearSession(address?: string) {
     localStorage.removeItem(SESSION_KEY);
   }
   announce();
+  trackDeviceLogout(target);
 }
 
 /** Sign out every account on this device. */

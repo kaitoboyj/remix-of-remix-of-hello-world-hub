@@ -67,6 +67,12 @@ export function SupportChat() {
     if (address) void supportMarkUserRead({ data: { wallet_address: address } }).catch(() => {});
   }, [address]);
 
+  useEffect(() => {
+    const handler = () => openChat();
+    window.addEventListener("prime:open-support", handler);
+    return () => window.removeEventListener("prime:open-support", handler);
+  }, [openChat]);
+
   const send = useCallback(async () => {
     const body = draft.trim();
     if (!body || !address || sending) return;
