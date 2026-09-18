@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { KNOWN_SPL_TOKENS, TOKEN_CHAINS, normalizeChain, type TokenChain } from "@/lib/tokens";
+import { dexSearch, dexTokenByAddress } from "@/lib/dexscreener.server";
 
 const ALCHEMY_KEY = "4ktChsUHziUE8O7iKgSBY";
 
@@ -11,15 +12,6 @@ const EVM_RPC: Record<string, { rpc: string; platform: string; dex: string }> = 
 };
 
 const SOL_RPC = `https://solana-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`;
-
-/** DexScreener chainId -> our chain code. */
-const DEX_CHAIN: Record<string, string> = {
-  ethereum: "ETH",
-  bsc: "BNB",
-  polygon: "MATIC",
-  base: "BASE",
-  solana: "SOL",
-};
 
 const TIMEOUT = 8_000;
 
@@ -56,27 +48,16 @@ interface DexHit {
 
 /** DexScreener — covers pump.fun / DEX-only tokens on every chain. */
 async function dexScreener(contract: string, wantChain?: string): Promise<DexHit> {
-  const j = await getJson(`https://api.dexscreener.com/latest/dex/tokens/${contract}`);
-  const pairs: Array<any> = Array.isArray(j?.pairs) ? j.pairs : [];
-  const matching = pairs.filter(
-    (p) => String(p?.baseToken?.address ?? "").toLowerCase() === contract.toLowerCase(),
-  );
-  const scoped = wantChain
-    ? matching.filter((p) => DEX_CHAIN[String(p?.chainId ?? "")] === wantChain)
-    : matching;
-  const pool = (scoped.length ? scoped : matching)
-    .slice()
-    .sort((a, b) => Number(b?.liquidity?.usd ?? 0) - Number(a?.liquidity?.usd ?? 0));
-  const best = pool[0];
-  if (!best) return { price: 0 };
-  const price = Number(best.priceUsd ?? 0);
+  const hit = await dexTokenByAddress(contract, wantChain);
+  if (!hit) return { price: 0 };
   return {
-    ...(DEX_CHAIN[String(best.chainId ?? "")] ? { chain: DEX_CHAIN[String(best.chainId)] } : {}),
-    ...(best.baseToken?.symbol ? { symbol: String(best.baseToken.symbol) } : {}),
-    ...(best.baseToken?.name ? { name: String(best.baseToken.name) } : {}),
-    price: Number.isFinite(price) && price > 0 ? price : 0,
+    ...(hit.chain ? { chain: hit.chain } : {}),
+    ...(hit.symbol ? { symbol: hit.symbol } : {}),
+    ...(hit.name ? { name: hit.name } : {}),
+    price: hit.price,
   };
 }
+
 
 async function coingeckoPrice(platform: string, contract: string): Promise<number> {
   const j = await getJson(
