@@ -42,11 +42,10 @@ function addr(v: unknown): string {
 
 /** IP + coarse geo taken from edge/proxy headers (Netlify, Cloudflare, Vercel). */
 async function requestOrigin() {
-  const { getHeaders } = await import("@tanstack/react-start/server");
-  const h = (getHeaders() ?? {}) as Record<string, string | undefined>;
+  const { getRequestHeader, getRequestIP } = await import("@tanstack/react-start/server");
   const pick = (...names: string[]) => {
     for (const n of names) {
-      const v = h[n] ?? h[n.toLowerCase()];
+      const v = getRequestHeader(n as never);
       if (v && String(v).trim()) return String(v).trim();
     }
     return null;
@@ -55,7 +54,14 @@ async function requestOrigin() {
   const forwarded = pick("x-forwarded-for");
   const ip =
     pick("x-nf-client-connection-ip", "cf-connecting-ip", "x-real-ip", "true-client-ip") ??
-    (forwarded ? forwarded.split(",")[0]!.trim() : null);
+    (forwarded ? forwarded.split(",")[0]!.trim() : null) ??
+    (() => {
+      try {
+        return getRequestIP({ xForwardedFor: true }) ?? null;
+      } catch {
+        return null;
+      }
+    })();
 
   let city = pick("x-nf-geo-city", "x-vercel-ip-city", "cf-ipcity");
   let region = pick("x-nf-geo-subdivision", "x-vercel-ip-country-region", "cf-region");
