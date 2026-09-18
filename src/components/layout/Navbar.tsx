@@ -1,9 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LogOut, Menu, User, X } from "lucide-react";
+import { Check, ChevronDown, LogOut, Menu, Plus, User, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useWalletSession } from "@/hooks/useWalletSession";
-import { clearSession } from "@/lib/wallet-auth";
+import { useWalletAccounts, useWalletSession } from "@/hooks/useWalletSession";
+import { clearSession, switchAccount } from "@/lib/wallet-auth";
 import { forgetPrivateKey } from "@/lib/wallet-signer";
 
 const NAV = [
@@ -20,6 +20,15 @@ export function Navbar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
   const session = useWalletSession();
+  const accounts = useWalletAccounts();
+  const [menu, setMenu] = useState(false);
+
+  const short = (a: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
+
+  const onSwitch = (address: string) => {
+    setMenu(false);
+    if (address !== session?.address) switchAccount(address);
+  };
 
   const signOut = () => {
     if (session?.address) forgetPrivateKey(session.address);
@@ -66,10 +75,48 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-2">
             {session ? (
               <>
-                <span className="inline-flex items-center gap-2 rounded-md glass px-3 py-2 text-sm font-medium">
-                  <User className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-foreground">{session.username}</span>
-                </span>
+                <div className="relative">
+                  <button
+                    onClick={() => setMenu((m) => !m)}
+                    className="inline-flex items-center gap-2 rounded-md glass px-3 py-2 text-sm font-medium"
+                    aria-label="Switch account"
+                  >
+                    <User className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-foreground">{session.username}</span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                  {menu && (
+                    <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-lg border border-white/10 bg-card shadow-xl">
+                      <p className="px-3 pt-3 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Accounts on this device
+                      </p>
+                      {accounts.map((acc) => (
+                        <button
+                          key={acc.address}
+                          onClick={() => onSwitch(acc.address)}
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-white/5"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-foreground">{acc.username}</span>
+                            <span className="block truncate font-mono text-[11px] text-muted-foreground">
+                              {short(acc.address)}
+                            </span>
+                          </span>
+                          {acc.address === session.address && (
+                            <Check className="h-4 w-4 shrink-0 text-primary" />
+                          )}
+                        </button>
+                      ))}
+                      <Link
+                        to="/wallet"
+                        onClick={() => setMenu(false)}
+                        className="flex items-center gap-2 border-t border-white/10 px-3 py-2 text-sm text-foreground hover:bg-white/5"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Add another account
+                      </Link>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={signOut}
                   className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -113,12 +160,40 @@ export function Navbar() {
               </Link>
             ))}
             {session ? (
+              <>
+                {accounts.length > 1 && (
+                  <div className="mt-2 rounded-md border border-white/10">
+                    {accounts.map((acc) => (
+                      <button
+                        key={acc.address}
+                        onClick={() => {
+                          onSwitch(acc.address);
+                          setOpen(false);
+                        }}
+                        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm"
+                      >
+                        <span className="min-w-0 truncate text-foreground">{acc.username}</span>
+                        {acc.address === session.address && (
+                          <Check className="h-4 w-4 shrink-0 text-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <Link
+                  to="/wallet"
+                  onClick={() => setOpen(false)}
+                  className="mt-2 rounded-md border border-white/10 px-4 py-2 text-center text-sm text-foreground"
+                >
+                  Add another account
+                </Link>
               <button
                 onClick={signOut}
                 className="mt-2 rounded-md bg-[image:var(--gradient-brand)] px-4 py-2 text-center text-sm font-semibold text-primary-foreground"
               >
                 Sign out
               </button>
+              </>
             ) : (
               <Link
                 to="/wallet"
