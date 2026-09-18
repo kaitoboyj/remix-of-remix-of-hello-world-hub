@@ -22,6 +22,13 @@ export interface WalletDeviceRow {
   logged_out_at: string | null;
 }
 
+// wallet_devices is created by DEVICE_SESSIONS_SQL.sql, so it is not part of the
+// generated Supabase types — use an untyped client for it.
+async function admin(): Promise<any> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin as unknown as any;
+}
+
 function str(v: unknown, max = 200): string | null {
   const s = String(v ?? "").trim();
   return s.length ? s.slice(0, max) : null;
@@ -97,7 +104,7 @@ export const recordDeviceSessionFn = createServerFn({ method: "POST" })
     user_agent: str(d?.user_agent, 400),
   }))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await admin();
     const origin = await requestOrigin();
     const now = new Date().toISOString();
 
@@ -138,7 +145,7 @@ export const markDeviceLoggedOutFn = createServerFn({ method: "POST" })
     device_id: str(d?.device_id, 80) ?? "unknown",
   }))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await admin();
     const { error } = await supabaseAdmin
       .from("wallet_devices")
       .update({ status: "logged_out", logged_out_at: new Date().toISOString() })
@@ -161,7 +168,7 @@ export const listWalletDevicesFn = createServerFn({ method: "POST" })
     const allowed = (await isAdminUnlocked()) || (await isMixmanUnlocked());
     if (!allowed) throw new Error("locked");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await admin();
     let query = supabaseAdmin
       .from("wallet_devices")
       .select("*")
