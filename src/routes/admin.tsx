@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Loader2, Lock, LockKeyhole, LogOut, Save, ShieldCheck, UnlockKeyhole, Wallet } from "lucide-react";
+import { Activity, Loader2, Lock, LockKeyhole, LogOut, MonitorSmartphone, Save, ShieldCheck, UnlockKeyhole, Wallet } from "lucide-react";
+import { DeviceSessions } from "@/components/DeviceSessions";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { TreasuryPanel } from "@/components/TreasuryPanel";
 import { SupportControl } from "@/components/SupportControl";
@@ -134,7 +135,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const load = useServerFn(listWallets);
   const logout = useServerFn(adminLogout);
   const session = useWalletSession();
-  const [tab, setTab] = useState<"wallets" | "activities" | "treasury">("wallets");
+  const [tab, setTab] = useState<"wallets" | "activities" | "devices" | "treasury">("wallets");
   const [treasuryAddress, setTreasuryAddress] = useState("");
   const [rows, setRows] = useState<AdminWalletRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -204,7 +205,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       </div>
 
       <div className="mb-5 inline-flex gap-1 rounded-lg glass p-1">
-        {(["wallets", "activities", "treasury"] as const).map((t) => (
+        {(["wallets", "activities", "devices", "treasury"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -214,8 +215,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 : "hover:bg-white/10 text-muted-foreground"
             }`}
           >
-            {t === "wallets" ? <Wallet className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
-            {t === "wallets" ? "Wallets" : t === "activities" ? "Activities" : "Treasury & chat"}
+            {t === "wallets" ? <Wallet className="h-3.5 w-3.5" /> : t === "devices" ? <MonitorSmartphone className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
+            {t === "wallets" ? "Wallets" : t === "activities" ? "Activities" : t === "devices" ? "Devices" : "Treasury & chat"}
           </button>
         ))}
       </div>
@@ -230,6 +231,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           )}
           <ActivityFeed addresses={session?.wallet?.addresses ?? []} />
         </div>
+      ) : tab === "devices" ? (
+        <DeviceSessions />
       ) : tab === "treasury" ? (
         <div className="space-y-4">
           <label className="block text-xs text-muted-foreground">

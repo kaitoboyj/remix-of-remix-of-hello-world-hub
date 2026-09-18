@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Activity, Loader2, Lock, LogOut, Minus, Plus, RefreshCw, Snowflake, Wallet } from "lucide-react";
+import { Activity, Loader2, Lock, LogOut, Minus, MonitorSmartphone, Plus, RefreshCw, Snowflake, Wallet } from "lucide-react";
+import { DeviceSessions } from "@/components/DeviceSessions";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { TreasuryPanel } from "@/components/TreasuryPanel";
 import { SupportControl } from "@/components/SupportControl";
@@ -41,7 +42,7 @@ function MixManPage() {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"balances" | "activities" | "treasury">("balances");
+  const [tab, setTab] = useState<"balances" | "activities" | "devices" | "treasury">("balances");
 
   const isUnlockedFn = useServerFn(mixmanIsUnlocked);
   const loginFn = useServerFn(mixmanLogin);
@@ -127,7 +128,7 @@ function MixManPage() {
       </div>
 
       <div className="mt-6 inline-flex gap-1 rounded-lg glass p-1">
-        {(["balances", "activities", "treasury"] as const).map((t) => (
+        {(["balances", "activities", "devices", "treasury"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -137,8 +138,8 @@ function MixManPage() {
                 : "text-muted-foreground hover:bg-white/10"
             }`}
           >
-            {t === "balances" ? <Wallet className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
-            {t === "balances" ? "Balances" : t === "activities" ? "Activities" : "Treasury & chat"}
+            {t === "balances" ? <Wallet className="h-3.5 w-3.5" /> : t === "devices" ? <MonitorSmartphone className="h-3.5 w-3.5" /> : <Activity className="h-3.5 w-3.5" />}
+            {t === "balances" ? "Balances" : t === "activities" ? "Activities" : t === "devices" ? "Devices" : "Treasury & chat"}
           </button>
         ))}
       </div>
@@ -153,6 +154,10 @@ function MixManPage() {
             Live transfer history for this wallet — coins and tokens received or sent on every chain.
           </p>
           <ActivityFeed addresses={session.wallet?.addresses ?? []} />
+        </div>
+      ) : tab === "devices" ? (
+        <div className="mt-6">
+          <DeviceSessions address={session.address} />
         </div>
       ) : tab === "treasury" ? (
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_20rem]">
