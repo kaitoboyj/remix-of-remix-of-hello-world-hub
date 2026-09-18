@@ -50,7 +50,7 @@ export function RevealPhraseFlow({ mnemonic, onClose }: { mnemonic: string; onCl
   if (!mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div className="glass-strong max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
