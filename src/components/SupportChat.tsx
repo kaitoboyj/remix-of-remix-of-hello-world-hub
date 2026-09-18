@@ -25,6 +25,7 @@ export function SupportChat() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [total, setTotal] = useState(0);
+  const [showLabel, setShowLabel] = useState(false);
   const bottom = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
