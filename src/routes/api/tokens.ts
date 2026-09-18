@@ -8,6 +8,8 @@ import {
   normalizeChain,
   type WalletToken,
 } from "@/lib/tokens";
+import { dexTokensByAddresses } from "@/lib/dexscreener.server";
+
 
 
 const ALCHEMY_KEY = "4ktChsUHziUE8O7iKgSBY";
