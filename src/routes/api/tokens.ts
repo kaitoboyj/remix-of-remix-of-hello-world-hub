@@ -85,15 +85,24 @@ async function evmTokens(chain: string, address: string): Promise<WalletToken[]>
     }),
   );
 
-  const prices = await contractPrices(cfg.platform, metas.map((m) => m.contract.toLowerCase()));
+  const contracts = metas.map((m) => m.contract.toLowerCase());
+  const prices = await contractPrices(cfg.platform, contracts);
+  // DexScreener covers DEX-only / newly launched tokens CoinGecko doesn't list,
+  // and gives us a symbol + name when Alchemy metadata is empty.
+  const dexInfo = await dexTokensByAddresses(
+    contracts.filter((c) => !prices[c]),
+    chain,
+  );
 
   const out: WalletToken[] = [];
   for (const m of metas) {
+    const dex = dexInfo[m.contract.toLowerCase()];
     const decimals = Number(m.meta?.decimals ?? 18);
     const amount = Number(BigInt(m.raw)) / Math.pow(10, Number.isFinite(decimals) ? decimals : 18);
     if (!Number.isFinite(amount) || amount <= 0) continue;
-    const symbol = String(m.meta?.symbol ?? "TOKEN").toUpperCase().slice(0, 12);
-    const price = prices[m.contract.toLowerCase()] ?? 0;
+    const symbol = String(m.meta?.symbol ?? dex?.symbol ?? "TOKEN").toUpperCase().slice(0, 12);
+    const price = prices[m.contract.toLowerCase()] ?? dex?.price ?? 0;
+
     out.push({
       chain,
       chainName: TOKEN_CHAIN_LABEL[chain] ?? chain,
