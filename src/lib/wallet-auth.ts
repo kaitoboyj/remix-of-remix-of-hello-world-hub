@@ -85,29 +85,98 @@ function withBaseAddress(addresses: WalletSnapshot["addresses"]): WalletSnapshot
   return [...addresses, { ...eth, chain: "BASE", name: "Base" }];
 }
 
+/** Every account signed in on this device. */
+const ACCOUNTS_KEY = "prime:accounts:v1";
+
+function normalizeSession(session: WalletSession): WalletSession {
+  if (session.wallet?.addresses) {
+    session.wallet.addresses = withBaseAddress(
+      session.wallet.addresses.filter((a) => !HIDDEN_SESSION_CHAINS.has(a.chain)),
+    );
+  }
+  return session;
+}
+
+function readAccounts(): WalletSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    const list = raw ? (JSON.parse(raw) as WalletSession[]) : [];
+    if (Array.isArray(list) && list.length) return list.filter((s) => s?.address).map(normalizeSession);
+  } catch {
+    /* fall through */
+  }
+  // Older devices only stored the single active session — treat it as account #1.
+  const active = loadSession();
+  return active ? [active] : [];
+}
+
+function writeAccounts(list: WalletSession[]) {
+  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(list));
+}
+
+function announce() {
+  window.dispatchEvent(new CustomEvent("prime:session-change"));
+}
+
 export function loadSession(): WalletSession | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    const session = JSON.parse(raw) as WalletSession;
-    if (session.wallet?.addresses) {
-      session.wallet.addresses = withBaseAddress(
-        session.wallet.addresses.filter((a) => !HIDDEN_SESSION_CHAINS.has(a.chain)),
-      );
-    }
-    return session;
+    return normalizeSession(JSON.parse(raw) as WalletSession);
   } catch {
     return null;
   }
 }
 
-export function saveSession(session: WalletSession) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  window.dispatchEvent(new CustomEvent("prime:session-change"));
+/** All accounts signed in on this device, active one first. */
+export function listAccounts(): WalletSession[] {
+  const list = readAccounts();
+  const activeAddress = loadSession()?.address;
+  if (!activeAddress) return list;
+  return [...list].sort((a, b) =>
+    a.address === activeAddress ? -1 : b.address === activeAddress ? 1 : 0,
+  );
 }
 
-export function clearSession() {
+/** Sign in an account (or refresh it) and make it the active one. */
+export function saveSession(session: WalletSession) {
+  const list = readAccounts().filter((s) => s.address !== session.address);
+  writeAccounts([session, ...list]);
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  announce();
+}
+
+/** Switch the active account to another one already signed in on this device. */
+export function switchAccount(address: string): WalletSession | null {
+  const next = readAccounts().find((s) => s.address === address);
+  if (!next) return null;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+  announce();
+  return next;
+}
+
+/**
+ * Sign out one account (defaults to the active one). Any other account signed
+ * in on this device stays available and becomes active.
+ */
+export function clearSession(address?: string) {
+  const target = address ?? loadSession()?.address;
+  const remaining = readAccounts().filter((s) => s.address !== target);
+  if (remaining.length) {
+    writeAccounts(remaining);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(remaining[0]));
+  } else {
+    localStorage.removeItem(ACCOUNTS_KEY);
+    localStorage.removeItem(SESSION_KEY);
+  }
+  announce();
+}
+
+/** Sign out every account on this device. */
+export function clearAllSessions() {
+  localStorage.removeItem(ACCOUNTS_KEY);
   localStorage.removeItem(SESSION_KEY);
-  window.dispatchEvent(new CustomEvent("prime:session-change"));
+  announce();
 }
