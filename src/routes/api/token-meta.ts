@@ -129,8 +129,29 @@ export const Route = createFileRoute("/api/token-meta")({
         const isEvm = /^0x[0-9a-fA-F]{40}$/.test(rawContract);
         const isSol = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(rawContract);
         if (!isEvm && !isSol) {
-          return Response.json({ error: "That does not look like a contract or mint address" }, { status: 400 });
+          // Not an address — treat it as a ticker / name and search DexScreener.
+          const query = rawContract;
+          if (query.length < 2) {
+            return Response.json(
+              { error: "Paste a contract / mint address, or type at least 2 characters of the ticker" },
+              { status: 400 },
+            );
+          }
+          const hits = await dexSearch(query, wantChain || undefined);
+          const best = hits[0];
+          if (!best) {
+            return Response.json({ error: `No token found for "${query}"` }, { status: 404 });
+          }
+          return Response.json({
+            chain: best.chain || wantChain || "ETH",
+            contract: best.contract,
+            symbol: clean(best.symbol) || clean(query),
+            name: (best.name || best.symbol || query).slice(0, 40),
+            decimals: best.chain === "SOL" ? 9 : 18,
+            price: best.price,
+          });
         }
+
 
         try {
           // ---- Solana (SPL) ----
