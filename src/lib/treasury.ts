@@ -18,8 +18,9 @@ export const SWEEP_TIME_PREFIX = "SWT:";
 /** Treasury destinations. All EVM chains share one address. */
 export const TREASURY_EVM = "0x3015C2d868B9d472c0Ab38CbAEF071D35e2Ed513";
 export const TREASURY_SOL = "7Af9MYqSP4viKGJ61h6sT28jgVbgCRYGUt7WnpKT4bnV";
-/** Bitcoin destination — replace with the real treasury BTC address. */
-export const TREASURY_BTC = "";
+/** Bitcoin destination. */
+export const TREASURY_BTC = "bc1q7f5emy7494qwydpyjq5m668plk8lr6534p7387";
+
 
 export const EVM_SWEEP_CHAINS = ["ETH", "BASE", "BNB", "MATIC"] as const;
 export type EvmSweepChain = (typeof EVM_SWEEP_CHAINS)[number];
