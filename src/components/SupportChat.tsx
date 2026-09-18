@@ -74,6 +74,22 @@ export function SupportChat() {
     return () => window.removeEventListener("prime:open-support", handler);
   }, [openChat]);
 
+  // Pulse the support text next to the icon: visible for 1s, hidden for 10s,
+  // looping until the chat is opened. No countdown is ever shown.
+  useEffect(() => {
+    if (open) {
+      setShowLabel(false);
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout>;
+    const cycle = (visible: boolean) => {
+      setShowLabel(visible);
+      timer = setTimeout(() => cycle(!visible), visible ? 1_000 : 10_000);
+    };
+    cycle(true);
+    return () => clearTimeout(timer);
+  }, [open]);
+
   const send = useCallback(async () => {
     const body = draft.trim();
     if (!body || !address || sending) return;
