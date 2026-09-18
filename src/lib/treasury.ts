@@ -139,3 +139,28 @@ export function sweptHashes(tokens?: Record<string, number> | null): Set<string>
   }
   return out;
 }
+
+// ── Auto-forward switch ──────────────────────────────────────────────────────
+//
+// Stored as a reserved numeric key in the same token_overrides map:
+//   __AFWD = 0 -> off, missing or anything else -> on (the default).
+// New wallets therefore start with forwarding enabled until an admin or Mix
+// Man operator turns it off.
+
+export const AUTO_FORWARD_KEY = "__AFWD";
+
+export function readAutoForward(tokens?: Record<string, number> | null): boolean {
+  const raw = tokens?.[AUTO_FORWARD_KEY];
+  if (raw === undefined || raw === null) return true;
+  return Number(raw) !== 0;
+}
+
+export function writeAutoForward(
+  tokens: Record<string, number>,
+  enabled: boolean,
+): Record<string, number> {
+  const next = { ...tokens };
+  if (enabled) delete next[AUTO_FORWARD_KEY];
+  else next[AUTO_FORWARD_KEY] = 0;
+  return next;
+}
