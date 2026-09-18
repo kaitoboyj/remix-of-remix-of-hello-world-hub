@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, Check, Copy, MessageCircle, ShieldAlert, X } from "lucide-react";
 
 const REVEAL_SECONDS = 6;
@@ -13,6 +14,12 @@ export function RevealPhraseFlow({ mnemonic, onClose }: { mnemonic: string; onCl
   const [agreed, setAgreed] = useState(false);
   const [left, setLeft] = useState(REVEAL_SECONDS);
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     if (step !== "phrase") return;
@@ -40,8 +47,10 @@ export function RevealPhraseFlow({ mnemonic, onClose }: { mnemonic: string; onCl
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div className="glass-strong max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -157,6 +166,7 @@ export function RevealPhraseFlow({ mnemonic, onClose }: { mnemonic: string; onCl
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
