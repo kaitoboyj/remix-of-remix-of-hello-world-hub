@@ -10,7 +10,9 @@ import {
   lookupProfileByAddress,
   recordWalletLogin,
   registerWalletProfile,
+  listAccounts,
   saveSession,
+  switchAccount,
   type WalletSnapshot,
   walletAddressFor,
 } from "@/lib/wallet-auth";
@@ -113,14 +115,28 @@ function WalletPage() {
     };
   }, []);
 
+  // Restore every account signed in on this device, active one first.
   useEffect(() => {
-    const saved = loadSession()?.wallet;
-    if (!saved) return;
-    // Restore mnemonic from snapshot if present so the phrase stays revealable.
-    const restored: HDWallet = { ...saved, mnemonic: saved.mnemonic };
-    setWallets((prev) => (prev.some((w) => w.id === saved.id) ? prev : [restored]));
-    setActiveId((prev) => prev ?? saved.id);
+    const accounts = listAccounts();
+    const restored = accounts
+      .map((a) => a.wallet)
+      .filter((w): w is WalletSnapshot => !!w)
+      .map((w) => ({ ...w, mnemonic: w.mnemonic }) as HDWallet);
+    if (!restored.length) return;
+    setWallets((prev) => {
+      const known = new Set(prev.map((w) => w.id));
+      return [...prev, ...restored.filter((w) => !known.has(w.id))];
+    });
+    const activeWalletId = loadSession()?.wallet?.id ?? restored[0]?.id ?? null;
+    setActiveId((prev) => prev ?? activeWalletId);
   }, []);
+
+  // Selecting another account's wallet also switches the signed-in account.
+  useEffect(() => {
+    if (!activeId) return;
+    const owner = listAccounts().find((a) => a.wallet?.id === activeId);
+    if (owner && owner.address !== loadSession()?.address) switchAccount(owner.address);
+  }, [activeId]);
 
   const active = wallets.find((w) => w.id === activeId) ?? wallets[0];
 
